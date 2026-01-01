@@ -26,7 +26,7 @@ jobs:
       run: npm run build
 
     - name: Upload web build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: web-build
         path: dist/
@@ -70,7 +70,7 @@ jobs:
         cargo tauri build
 
     - name: Upload desktop artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: desktop-build-${{ matrix.os }}
         path: src-tauri/target/release/bundle/*
@@ -104,7 +104,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload Electron artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: electron-build-${{ matrix.os }}
         path: dist_electron/*
@@ -116,7 +116,7 @@ jobs:
 
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
