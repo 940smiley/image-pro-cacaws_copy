@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { getStampResourcePreprocessor } from '../utils/stampResourcePreprocessor';
 
 interface GeminiRequest {
   imageBase64: string;
@@ -62,7 +63,7 @@ Deno.serve(async (req: Request) => {
     const body: GeminiRequest = await req.json();
 
     // Use the enhanced prompt if provided, otherwise use the default
-    const prompt = body.enhancedPrompt || `Analyze this image and provide:
+    let prompt = body.enhancedPrompt || `Analyze this image and provide:
 1. A detailed description (1-2 sentences)
 2. List of identified objects/items
 3. Categories the image belongs to
@@ -70,6 +71,16 @@ Deno.serve(async (req: Request) => {
 5. Confidence level (0-100)
 
 Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number).`;
+
+    // Check if this is a stamp being analyzed and add additional context from our stamp resources
+    if (body.enhancedPrompt && body.enhancedPrompt.toLowerCase().includes('stamp')) {
+      const preprocessor = getStampResourcePreprocessor();
+      await preprocessor.initialize();
+      const stampKnowledge = preprocessor.getStampKnowledge();
+
+      // Add the stamp knowledge to the prompt
+      prompt = `Using the following knowledge about stamp identification:\n\n${stampKnowledge}\n\n${body.enhancedPrompt}`;
+    }
 
     const geminiPayload = {
       contents: [
