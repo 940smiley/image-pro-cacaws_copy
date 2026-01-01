@@ -1,0 +1,69 @@
+name: Report Build Failure
+
+on:
+  workflow_run:
+    workflows: ["Build and Release"]
+    types:
+      - completed
+
+permissions:
+  issues: write
+  actions: read
+  contents: read
+
+jobs:
+  create_issue_on_failure:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - name: Report Failure
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const runId = context.payload.workflow_run.id;
+            const runUrl = context.payload.workflow_run.html_url;
+            const repoOwner = context.repo.owner;
+            const repoName = context.repo.repo;
+
+            // 1. Find the failed job
+            const jobs = await github.rest.actions.listJobsForWorkflowRun({
+              owner: repoOwner,
+              repo: repoName,
+              run_id: runId,
+              filter: 'latest'
+            });
+
+            const failedJob = jobs.data.jobs.find(job => job.conclusion === 'failure');
+            
+            let logSnippet = "Could not retrieve logs.";
+            
+            if (failedJob) {
+              try {
+                // 2. Retrieve logs for the failed job
+                const logs = await github.rest.actions.downloadJobLogsForWorkflowRun({
+                  owner: repoOwner,
+                  repo: repoName,
+                  job_id: failedJob.id,
+                  run_id: runId
+                });
+
+                // 3. Extract the last 50 lines or relevant error section
+                const logContent = String(logs.data);
+                const lines = logContent.split('\n');
+                const lastLines = lines.slice(-50).join('\n');
+                logSnippet = "```\n" + lastLines + "\n```";
+              } catch (e) {
+                console.log("Error fetching logs: " + e.message);
+                logSnippet = "Logs could not be fetched automatically. Please check the Action run.";
+              }
+            }
+
+            // 4. Create the Issue
+            await github.rest.issues.create({
+              owner: repoOwner,
+              repo: repoName,
+              title: `🚨 Build Failed: ${context.payload.workflow_run.name}`,
+              body: `The build failed in the **${failedJob ? failedJob.name : 'unknown'}** job.\n\n[View Run](${runUrl})\n\n### Error Log Snippet\n${logSnippet}\n\n@${context.payload.workflow_run.actor.login} please investigate.`,
+              labels: ['needs-ai', 'build-failure']
+            });
