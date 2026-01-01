@@ -115,11 +115,15 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.gh_token }}
+
     - name: Download all artifacts
       uses: actions/download-artifact@v4
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.gh_token }}
         publish_dir: ./web-build
