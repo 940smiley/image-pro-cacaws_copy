@@ -1,5 +1,10 @@
 name: Build and Release
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 on:
   push:
     branches: [ main ]
@@ -123,7 +128,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        token: ${{ secrets.gh_token }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Download all artifacts
       uses: actions/download-artifact@v4
@@ -131,5 +136,5 @@ jobs:
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
-        github_token: ${{ secrets.gh_token }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./web-build
