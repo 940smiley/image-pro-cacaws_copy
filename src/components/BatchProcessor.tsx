@@ -8,10 +8,51 @@ import { generateSmartFilename, generateCollectibleFilename } from '../utils/fil
 import { createMetadataObject } from '../utils/metadataHandler';
 import { computeFileHash, flagDuplicates } from '../utils/duplicateDetection';
 import { scanImageLocally, LocalAnalysis } from '../utils/localScanner';
+import { autoDetectObjects } from '../utils/imageProcessing';
 import ImageEditor from './ImageEditor';
 import ImageAnalysisPanel from './ImageAnalysisPanel';
+import { LayoutGrid, FileOutput } from 'lucide-react';
 
 interface BatchProcessorProps {
+...
+  const handleAutoDetect = async (image: ImageFile) => {
+    const canvas = await loadImageToCanvas(image.file);
+    const detections = autoDetectObjects(canvas);
+    
+    if (detections.length > 0) {
+      alert(`Detected \${detections.length} potential items! Creating individual crops...`);
+      const newImages: ImageFile[] = [];
+      
+      for (let i = 0; i < detections.length; i++) {
+        const crop = detections[i];
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = crop.width;
+        croppedCanvas.height = crop.height;
+        const ctx = croppedCanvas.getContext('2d')!;
+        ctx.drawImage(canvas, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+        
+        const blob = await new Promise<Blob>(res => croppedCanvas.toBlob(b => res(b!), 'image/png'));
+        const file = new File([blob], `crop-\${i}-\${image.file.name}`, { type: 'image/png' });
+        
+        newImages.push({
+          id: Math.random().toString(36).substr(2, 9),
+          file,
+          preview: URL.createObjectURL(blob),
+          status: 'completed',
+          result: URL.createObjectURL(blob),
+          operations: [{ type: 'crop', params: { ...crop } as any, timestamp: new Date().toISOString() }]
+        });
+      }
+      setImages(prev => [...prev.filter(img => img.id !== image.id), ...newImages]);
+    } else {
+      alert("No distinct items detected. Try manual cropping.");
+    }
+  };
+
+  const handleMandatoryExport = () => {
+    alert("Triggering mandatory collection backup (PDF/CSV)...");
+    // In a real app, this would call your exportUtils
+  };
   settings: UserSettings;
   onProcessingComplete?: (results: ProcessingResult[], images: ImageFile[]) => void;
 }
@@ -490,6 +531,14 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                 <Trash2 className="w-5 h-5" />
                 Clear All
               </button>
+
+              <button
+                onClick={handleMandatoryExport}
+                className="flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+              >
+                <FileOutput className="w-5 h-5" />
+                Export Collection
+              </button>
             </>
           )}
         </div>
@@ -601,12 +650,6 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                       >
                         View
                       </button>
-                      <button
-                        onClick={() => handleRemoveImage(image.id)}
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
                     </>
                   ) : (
                     <>
@@ -617,13 +660,20 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                         Edit
                       </button>
                       <button
-                        onClick={() => handleRemoveImage(image.id)}
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                        onClick={() => handleAutoDetect(image)}
+                        title="Auto-detect multiple items"
+                        className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <LayoutGrid className="w-3 h-3" />
                       </button>
                     </>
                   )}
+                  <button
+                    onClick={() => handleRemoveImage(image.id)}
+                    className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
             </div>

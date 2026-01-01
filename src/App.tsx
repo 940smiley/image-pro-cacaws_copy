@@ -5,12 +5,14 @@ import Settings from './components/Settings';
 import ExportPanel from './components/ExportPanel';
 import AiProviderConfig from './components/AiProviderConfig';
 import EbayConfig from './components/EbayConfig';
+import PriceDashboard from './components/PriceDashboard';
 import Auth from './components/Auth';
 import { supabase } from './lib/supabase';
 import { themeManager } from './lib/themeManager';
 import { UserSettings, ProcessingResult, ImageFile } from './types';
+import { TrendingUp } from 'lucide-react';
 
-type TabType = 'processor' | 'settings' | 'about' | 'export' | 'ai-config' | 'ebay-config';
+type TabType = 'processor' | 'settings' | 'about' | 'export' | 'ai-config' | 'ebay-config' | 'dashboard';
 
 const defaultSettings: UserSettings = {
   id: '',
@@ -102,6 +104,7 @@ function App() {
 
   const tabs = [
     { id: 'processor' as TabType, label: 'Image Processor', icon: ImageIcon },
+    { id: 'dashboard' as TabType, label: 'Market Insights', icon: TrendingUp },
     { id: 'export' as TabType, label: 'Export & Share', icon: Share2 },
     { id: 'ai-config' as TabType, label: 'AI Providers', icon: SettingsIcon },
     { id: 'ebay-config' as TabType, label: 'eBay Config', icon: Package },
@@ -208,6 +211,11 @@ function App() {
               setProcessedImages(images);
             }}
           />
+        )}
+        {activeTab === 'dashboard' && (
+          <div className="max-w-7xl mx-auto p-6">
+            <PriceDashboard />
+          </div>
         )}
         {activeTab === 'export' && (
           <div className="max-w-7xl mx-auto p-6">

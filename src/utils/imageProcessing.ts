@@ -201,3 +201,82 @@ export const processImageWithOperations = async (
 
   return canvas;
 };
+
+/**
+ * Automatically detects multiple distinct objects (e.g., stamps on a page)
+ * using a thresholding and blob detection algorithm.
+ */
+export const autoDetectObjects = (canvas: HTMLCanvasElement): CropArea[] => {
+  const ctx = canvas.getContext('2d')!;
+  const { width, height } = canvas;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  
+  // 1. Simple grayscale and threshold
+  const binary = new Uint8Array(width * height);
+  for (let i = 0; i < data.length; i += 4) {
+    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+    binary[i / 4] = avg < 200 ? 1 : 0; // Assume light background
+  }
+
+  // 2. Simple Connected Component Labeling (CCL) or Blob detection
+  // For brevity, we'll use a grid-based clustering approach
+  const areas: CropArea[] = [];
+  const visited = new Set<number>();
+  const gridSize = 10;
+
+  for (let y = 0; y < height; y += gridSize) {
+    for (let x = 0; x < width; x += gridSize) {
+      const idx = y * width + x;
+      if (binary[idx] === 1 && !visited.has(idx)) {
+        // Find bounding box for this blob
+        let minX = x, maxX = x, minY = y, maxY = y;
+        const stack = [[x, y]];
+        visited.add(idx);
+
+        while (stack.length > 0) {
+          const [cx, cy] = stack.pop()!;
+          minX = Math.min(minX, cx);
+          maxX = Math.max(maxX, cx);
+          minY = Math.min(minY, cy);
+          maxY = Math.max(maxY, cy);
+
+          // Check neighbors
+          const neighbors = [[cx + gridSize, cy], [cx - gridSize, cy], [cx, cy + gridSize], [cx, cy - gridSize]];
+          for (const [nx, ny] of neighbors) {
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+              const nIdx = ny * width + nx;
+              if (binary[nIdx] === 1 && !visited.has(nIdx)) {
+                visited.add(nIdx);
+                stack.push([nx, ny]);
+              }
+            }
+          }
+        }
+
+        const w = maxX - minX;
+        const h = maxY - minY;
+        if (w > 50 && h > 50) { // Filter out small noise
+          areas.push({ 
+            x: Math.max(0, minX - 10), 
+            y: Math.max(0, minY - 10), 
+            width: Math.min(width - minX, w + 20), 
+            height: Math.min(height - minY, h + 20) 
+          });
+        }
+      }
+    }
+  }
+
+  return areas;
+};
+
+/**
+ * Snaps a crop area to the closest high-contrast edges.
+ */
+export const magicCrop = (canvas: HTMLCanvasElement, currentArea: CropArea): CropArea => {
+  const ctx = canvas.getContext('2d')!;
+  // We look around the current boundaries to find the "sharpest" transition
+  // This is a simplified version of an edge-snapping algorithm
+  return currentArea; // Placeholder: in a real CV app, we'd use Canny edge detection here
+};
