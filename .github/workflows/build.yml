@@ -98,12 +98,12 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Build Electron TypeScript files
-      run: npm run build:electron
+    - name: Compile Electron files
+      run: npm run electron:build
 
-    - name: Install Electron Builder
-      run: npm install --save-dev electron-builder
-
+    - name: Build Electron application
+      run: npm run electron:build
+      env:
     - name: Build Electron application
       run: npm run build && npx electron-builder --publish=never
       env:
