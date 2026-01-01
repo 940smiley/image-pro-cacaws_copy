@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { getStampResourcePreprocessor } from '../utils/stampResourcePreprocessor';
+import { getStampResourcePreprocessor } from '../utils/stampResourcePreprocessor.ts';
 
 interface GeminiRequest {
   imageBase64: string;
