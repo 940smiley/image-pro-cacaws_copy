@@ -24,6 +24,9 @@ jobs:
 
     - name: Build web application
       run: npm run build
+      env:
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
     - name: Upload web build artifacts
       uses: actions/upload-artifact@v4
