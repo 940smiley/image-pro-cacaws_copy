@@ -2,6 +2,8 @@
   "name": "vite-react-typescript-starter",
   "private": true,
   "version": "0.0.0",
+  "description": "Image Pro - Advanced image processing and analysis application with AI-powered features",
+  "author": "940smiley",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +17,8 @@
     "build:all:win": "scripts\\build-and-release.bat",
     "test": "npm run typecheck && npm run lint",
     "release": "bash scripts/build-and-release.sh"
-  },
+    "release": "bash scripts/build-and-release.sh",
+    "electron:build": "npm run build && tsc electron/*.ts --outDir dist-electron --target es2020 --module commonjs --esModuleInterop --skipLibCheck && electron-builder --publish=never"
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
     "exiftool-vendored": "^34.2.0",
@@ -31,6 +34,9 @@
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "@types/node": "^22.10.2",
+    "electron": "^32.2.6",
+    "electron-builder": "^26.0.12",
     "autoprefixer": "^10.4.18",
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
