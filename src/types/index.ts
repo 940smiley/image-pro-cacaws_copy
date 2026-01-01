@@ -21,7 +21,7 @@ export interface ProcessingHistory {
 }
 
 export interface ProcessingOperation {
-  type: 'expand' | 'crop' | 'enhance' | 'resize';
+  type: 'expand' | 'crop' | 'enhance' | 'resize' | 'rotate';
   params: Record<string, number | string | boolean>;
   timestamp: string;
 }
@@ -36,6 +36,8 @@ export interface ImageFile {
   error?: string;
   geminiAnalysis?: GeminiAnalysis;
   ebayData?: EbayPricingData;
+  isDuplicate?: boolean;
+  hash?: string;
 }
 
 export interface CropArea {

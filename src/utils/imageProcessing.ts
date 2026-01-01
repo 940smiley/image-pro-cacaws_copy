@@ -47,6 +47,36 @@ export const cropImage = (
   return croppedCanvas;
 };
 
+export const rotateImage = (
+  sourceCanvas: HTMLCanvasElement,
+  angle: number
+): HTMLCanvasElement => {
+  const rotatedCanvas = document.createElement('canvas');
+  const ctx = rotatedCanvas.getContext('2d')!;
+
+  // Convert angle to radians
+  const radians = (angle * Math.PI) / 180;
+
+  // Calculate new canvas dimensions to fit rotated image
+  const width = sourceCanvas.width;
+  const height = sourceCanvas.height;
+  
+  const cos = Math.abs(Math.cos(radians));
+  const sin = Math.abs(Math.sin(radians));
+  
+  rotatedCanvas.width = width * cos + height * sin;
+  rotatedCanvas.height = width * sin + height * cos;
+
+  // Center and rotate
+  ctx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+  ctx.rotate(radians);
+  
+  // Draw the image
+  ctx.drawImage(sourceCanvas, -width / 2, -height / 2);
+
+  return rotatedCanvas;
+};
+
 export const enhanceImage = (sourceCanvas: HTMLCanvasElement): HTMLCanvasElement => {
   const enhancedCanvas = document.createElement('canvas');
   const ctx = enhancedCanvas.getContext('2d')!;

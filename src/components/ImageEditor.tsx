@@ -1,21 +1,22 @@
 import { useState, useRef, useEffect } from 'react';
-import { Crop, Download, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Crop, Download, X, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import { CropArea } from '../types';
 
 interface ImageEditorProps {
   image: string;
-  onCrop: (cropArea: CropArea) => void;
+  onApply: (cropArea: CropArea, rotation: number) => void;
   onClose: () => void;
   onDownload: () => void;
   showGrid: boolean;
 }
 
-export default function ImageEditor({ image, onCrop, onClose, onDownload, showGrid }: ImageEditorProps) {
+export default function ImageEditor({ image, onApply, onClose, onDownload, showGrid }: ImageEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [cropArea, setCropArea] = useState<CropArea>({ x: 50, y: 50, width: 200, height: 200 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [scale, setScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -56,20 +57,32 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
         y: height * 0.1,
         width: width * 0.8,
         height: height * 0.8,
-      });
+      }, rotation);
     };
     img.src = image;
-  }, [image]);
+  }, [image, rotation]);
 
-  const draw = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, width: number, height: number, area: CropArea) => {
+  const draw = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, width: number, height: number, area: CropArea, rot: number) => {
     ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(img, 0, 0, width, height);
+    
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate((rot * Math.PI) / 180);
+    ctx.drawImage(img, -width / 2, -height / 2, width, height);
+    ctx.restore();
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.fillRect(0, 0, width, height);
 
-    ctx.clearRect(area.x, area.y, area.width, area.height);
-    ctx.drawImage(img, 0, 0, width, height);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(area.x, area.y, area.width, area.height);
+    ctx.clip();
+    
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate((rot * Math.PI) / 180);
+    ctx.drawImage(img, -width / 2, -height / 2, width, height);
+    ctx.restore();
 
     if (showGrid) {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
@@ -104,8 +117,8 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / (rect.width / canvas.width);
+    const y = (e.clientY - rect.top) / (rect.height / canvas.height);
 
     if (
       x >= cropArea.x &&
@@ -124,8 +137,8 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / (rect.width / canvas.width);
+    const y = (e.clientY - rect.top) / (rect.height / canvas.height);
 
     const newX = Math.max(0, Math.min(x - cropArea.width / 2, imageSize.width - cropArea.width));
     const newY = Math.max(0, Math.min(y - cropArea.height / 2, imageSize.height - cropArea.height));
@@ -136,7 +149,7 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
     const ctx = canvas.getContext('2d');
     if (ctx) {
       const img = new Image();
-      img.onload = () => draw(ctx, img, imageSize.width, imageSize.height, newCropArea);
+      img.onload = () => draw(ctx, img, imageSize.width, imageSize.height, newCropArea, rotation);
       img.src = image;
     }
   };
@@ -160,12 +173,12 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
     const ctx = canvas?.getContext('2d');
     if (ctx && canvas) {
       const img = new Image();
-      img.onload = () => draw(ctx, img, imageSize.width, imageSize.height, newCropArea);
+      img.onload = () => draw(ctx, img, imageSize.width, imageSize.height, newCropArea, rotation);
       img.src = image;
     }
   };
 
-  const handleApplyCrop = () => {
+  const handleApply = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -181,7 +194,7 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
         height: cropArea.height * scaleY,
       };
 
-      onCrop(actualCropArea);
+      onApply(actualCropArea, rotation);
     };
     img.src = image;
   };
@@ -190,7 +203,7 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-auto">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-xl font-bold text-gray-800">Crop Image</h3>
+          <h3 className="text-xl font-bold text-gray-800">Edit Image</h3>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -212,7 +225,7 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
             />
           </div>
 
-          <div className="flex items-center justify-center gap-4 mb-4">
+          <div className="flex items-center justify-center gap-4 mb-6">
             <button
               onClick={() => setScale(Math.max(0.5, scale - 0.1))}
               className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -228,9 +241,44 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="mb-6 bg-gray-50 p-4 rounded-lg">
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <RotateCw className="w-4 h-4" />
+              Rotation: {rotation}°
+            </label>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setRotation((r) => (r - 1 + 360) % 360)}
+                className="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm font-bold"
+              >
+                -1°
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="359"
+                value={rotation}
+                onChange={(e) => setRotation(parseInt(e.target.value))}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              />
+              <button
+                onClick={() => setRotation((r) => (r + 1) % 360)}
+                className="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm font-bold"
+              >
+                +1°
+              </button>
+              <button
+                onClick={() => setRotation(0)}
+                className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-xs font-medium"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Width</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Crop Width</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleResize('width', -10)}
@@ -257,7 +305,7 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Height</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Crop Height</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleResize('height', -10)}
@@ -286,11 +334,11 @@ export default function ImageEditor({ image, onCrop, onClose, onDownload, showGr
 
           <div className="flex gap-3">
             <button
-              onClick={handleApplyCrop}
+              onClick={handleApply}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              <Crop className="w-5 h-5" />
-              Apply Crop
+              <RotateCw className="w-5 h-5" />
+              Apply Changes
             </button>
             <button
               onClick={onDownload}

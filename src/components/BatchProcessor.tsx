@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Image as ImageIcon, Trash2, Download, Play, AlertCircle, CheckCircle, Loader, Zap, ShoppingCart, Package, Share2, Upload as UploadIcon } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, Download, Play, AlertCircle, CheckCircle, Loader, Zap, ShoppingCart, Package, Share2, Upload as UploadIcon, Copy } from 'lucide-react';
 import { ImageFile, UserSettings, CropArea, ProcessingResult } from '../types';
-import { loadImageToCanvas, expandImage, cropImage, enhanceImage, downloadImage } from '../utils/imageProcessing';
+import { loadImageToCanvas, expandImage, cropImage, enhanceImage, downloadImage, rotateImage } from '../utils/imageProcessing';
 import { analyzeImageWithGemini, searchEbayPricing } from '../utils/apiClient';
 import { analyzeCollectibleWithGemini } from '../utils/apiClient';
 import { generateSmartFilename, generateCollectibleFilename } from '../utils/filenameGenerator';
 import { createMetadataObject } from '../utils/metadataHandler';
+import { computeFileHash, flagDuplicates } from '../utils/duplicateDetection';
 import ImageEditor from './ImageEditor';
 import ImageAnalysisPanel from './ImageAnalysisPanel';
 
@@ -51,7 +52,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
     }
   }, [processing, images, onProcessingComplete]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
     if (images.length + files.length > MAX_BATCH_SIZE) {
@@ -59,15 +60,19 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
       return;
     }
 
-    const newImages: ImageFile[] = files.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-      preview: URL.createObjectURL(file),
-      status: 'pending',
-      operations: [],
+    const newImagesWithHashes = await Promise.all(files.map(async (file) => {
+      const hash = await computeFileHash(file);
+      return {
+        id: Math.random().toString(36).substr(2, 9),
+        file,
+        preview: URL.createObjectURL(file),
+        status: 'pending' as const,
+        operations: [],
+        hash
+      };
     }));
 
-    setImages(prev => [...prev, ...newImages]);
+    setImages(prev => flagDuplicates([...prev, ...newImagesWithHashes]));
   };
 
   const handleRemoveImage = (id: string) => {
@@ -79,7 +84,8 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
           URL.revokeObjectURL(image.result);
         }
       }
-      return prev.filter(img => img.id !== id);
+      const filtered = prev.filter(img => img.id !== id);
+      return flagDuplicates(filtered);
     });
   };
 
@@ -196,17 +202,24 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
     setEditingImage(image);
   };
 
-  const handleCrop = async (cropArea: CropArea) => {
+  const handleApplyChanges = async (cropArea: CropArea, rotation: number) => {
     if (!editingImage) return;
 
     try {
       let canvas = await loadImageToCanvas(editingImage.file);
+      const operations = [...editingImage.operations];
 
       if (settings.expand_before_crop && settings.expansion_percentage > 0) {
         canvas = expandImage(canvas, settings.expansion_percentage);
       }
 
+      if (rotation !== 0) {
+        canvas = rotateImage(canvas, rotation);
+        operations.push({ type: 'rotate', params: { angle: rotation }, timestamp: new Date().toISOString() });
+      }
+
       canvas = cropImage(canvas, cropArea);
+      operations.push({ type: 'crop', params: cropArea, timestamp: new Date().toISOString() });
 
       if (settings.auto_enhance) {
         canvas = enhanceImage(canvas);
@@ -228,10 +241,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                 ...img,
                 status: 'completed',
                 result,
-                operations: [
-                  ...img.operations,
-                  { type: 'crop', params: cropArea, timestamp: new Date().toISOString() },
-                ],
+                operations
               }
             : img
         )
@@ -239,7 +249,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
 
       setEditingImage(null);
     } catch (error) {
-      console.error('Error cropping image:', error);
+      console.error('Error applying changes:', error);
     }
   };
 
@@ -287,10 +297,19 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
           }
         }
 
-        // Generate smart filename based on analysis
-        const newFilename = analysis.collectibleDetails
-          ? generateCollectibleFilename(image.file.name, analysis)
-          : generateSmartFilename(image.file.name, analysis);
+        // Renaming logic to identified object
+        let newFilename = image.file.name;
+        const extension = image.file.name.split('.').pop();
+        
+        if (analysis.collectibleDetails) {
+          newFilename = generateCollectibleFilename(image.file.name, analysis);
+        } else if (analysis.objects && analysis.objects.length > 0) {
+          // Rename to the first identified object
+          const objectName = analysis.objects[0].replace(/[^a-z0-9]/gi, '_').toLowerCase();
+          newFilename = `${objectName}.${extension}`;
+        } else {
+          newFilename = generateSmartFilename(image.file.name, analysis);
+        }
 
         setImages(prev =>
           prev.map(img =>
@@ -299,7 +318,6 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                   ...img,
                   geminiAnalysis: analysis,
                   ebayData,
-                  // Update the file object to reflect the new name
                   file: new File([image.file], newFilename, { type: image.file.type })
                 }
               : img
@@ -328,6 +346,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
   const completedCount = images.filter(img => img.status === 'completed').length;
   const errorCount = images.filter(img => img.status === 'error').length;
   const analyzedCount = images.filter(img => img.geminiAnalysis).length;
+  const duplicateCount = images.filter(img => img.isDuplicate).length;
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -448,6 +467,12 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
               <Zap className="w-4 h-4 text-purple-600" />
               <span className="text-gray-700">Analyzed: {analyzedCount}</span>
             </div>
+            {duplicateCount > 0 && (
+              <div className="flex items-center gap-2">
+                <Copy className="w-4 h-4 text-amber-600" />
+                <span className="text-amber-700 font-bold">Duplicates: {duplicateCount}</span>
+              </div>
+            )}
             {errorCount > 0 && (
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-red-600" />
@@ -469,7 +494,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
           {images.map((image) => (
             <div
               key={image.id}
-              className="relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+              className={`relative bg-white border ${image.isDuplicate ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-200'} rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow`}
             >
               <div className="aspect-square relative">
                 <img
@@ -477,6 +502,13 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                   alt={image.file.name}
                   className="w-full h-full object-cover"
                 />
+
+                {image.isDuplicate && (
+                  <div className="absolute top-2 left-2 bg-amber-500 text-white px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 shadow-lg">
+                    <Copy className="w-3 h-3" />
+                    DUPLICATE
+                  </div>
+                )}
 
                 {image.status === 'processing' && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -498,7 +530,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
               </div>
 
               <div className="p-2">
-                <p className="text-xs text-gray-600 truncate mb-2">{image.file.name}</p>
+                <p className={`text-xs ${image.isDuplicate ? 'text-amber-700 font-medium' : 'text-gray-600'} truncate mb-2`}>{image.file.name}</p>
 
                 {image.geminiAnalysis && (
                   <div className="mb-2 flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
@@ -549,7 +581,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
       {editingImage && (
         <ImageEditor
           image={editingImage.result || editingImage.preview}
-          onCrop={handleCrop}
+          onApply={handleApplyChanges}
           onClose={() => setEditingImage(null)}
           onDownload={handleDownloadCurrent}
           showGrid={settings.show_grid}
