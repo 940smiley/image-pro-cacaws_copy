@@ -63,27 +63,34 @@ export const enhanceImage = (sourceCanvas: HTMLCanvasElement): HTMLCanvasElement
   const contrast = 1.15;
   const saturation = 1.2;
 
+  // Pre-calculate brightness and contrast lookup table
+  const bcLUT = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) {
+    let val = i * brightness;
+    val = ((val - 128) * contrast) + 128;
+    bcLUT[i] = Math.max(0, Math.min(255, val));
+  }
+
+  // Pre-calculate saturation constants
+  const satConst = 1 - saturation;
+  const rW = 0.2989;
+  const gW = 0.5870;
+  const bW = 0.1140;
+
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
 
-    let newR = r * brightness;
-    let newG = g * brightness;
-    let newB = b * brightness;
+    const newR = bcLUT[r];
+    const newG = bcLUT[g];
+    const newB = bcLUT[b];
 
-    newR = ((newR - 128) * contrast) + 128;
-    newG = ((newG - 128) * contrast) + 128;
-    newB = ((newB - 128) * contrast) + 128;
-
-    const gray = 0.2989 * newR + 0.5870 * newG + 0.1140 * newB;
-    newR = gray + (newR - gray) * saturation;
-    newG = gray + (newG - gray) * saturation;
-    newB = gray + (newB - gray) * saturation;
-
-    data[i] = Math.max(0, Math.min(255, newR));
-    data[i + 1] = Math.max(0, Math.min(255, newG));
-    data[i + 2] = Math.max(0, Math.min(255, newB));
+    const gray = rW * newR + gW * newG + bW * newB;
+    
+    data[i] = Math.max(0, Math.min(255, gray * satConst + newR * saturation));
+    data[i + 1] = Math.max(0, Math.min(255, gray * satConst + newG * saturation));
+    data[i + 2] = Math.max(0, Math.min(255, gray * satConst + newB * saturation));
   }
 
   ctx.putImageData(imageData, 0, 0);

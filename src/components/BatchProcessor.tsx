@@ -143,24 +143,31 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
   const handleProcessAll = async () => {
     setProcessing(true);
 
-    for (let i = 0; i < images.length; i++) {
-      if (images[i].status === 'completed') continue;
+    const pendingImages = images.filter(img => img.status !== 'completed');
+    const BATCH_SIZE = 3;
 
-      setImages(prev =>
-        prev.map((img, idx) =>
-          idx === i ? { ...img, status: 'processing' } : img
+    for (let i = 0; i < pendingImages.length; i += BATCH_SIZE) {
+      const batch = pendingImages.slice(i, i + BATCH_SIZE);
+      
+      // Update status to processing for the current batch
+      setImages(prev => 
+        prev.map(img => 
+          batch.some(b => b.id === img.id) ? { ...img, status: 'processing' } : img
         )
       );
 
-      const processed = await processImage(images[i]);
-
-      setImages(prev =>
-        prev.map((img, idx) =>
-          idx === i ? processed : img
-        )
+      // Process batch in parallel
+      const results = await Promise.all(
+        batch.map(img => processImage(img))
       );
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Update results
+      setImages(prev => 
+        prev.map(img => {
+          const result = results.find(r => r.id === img.id);
+          return result || img;
+        })
+      );
     }
 
     setProcessing(false);
@@ -300,6 +307,13 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
         );
       } catch (error) {
         console.error('Error analyzing image:', error);
+        setImages(prev => 
+          prev.map(img => 
+            img.id === image.id 
+              ? { ...img, status: 'error', error: error instanceof Error ? error.message : 'Analysis failed' } 
+              : img
+          )
+        );
       } finally {
         newAnalyzingIds.delete(image.id);
         setAnalyzingIds(new Set(newAnalyzingIds));
