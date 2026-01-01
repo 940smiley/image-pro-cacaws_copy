@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Settings as SettingsIcon, Info, Upload, Download, Share2, Package } from 'lucide-react';
+import { Image as ImageIcon, Settings as SettingsIcon, Info, Upload, Download, Share2, Package, LogOut } from 'lucide-react';
 import BatchProcessor from './components/BatchProcessor';
 import Settings from './components/Settings';
 import ExportPanel from './components/ExportPanel';
 import AiProviderConfig from './components/AiProviderConfig';
 import EbayConfig from './components/EbayConfig';
+import Auth from './components/Auth';
 import { supabase } from './lib/supabase';
 import { themeManager } from './lib/themeManager';
 import { UserSettings, ProcessingResult, ImageFile } from './types';
@@ -27,6 +28,7 @@ const defaultSettings: UserSettings = {
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('processor');
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [showAiProviderConfig, setShowAiProviderConfig] = useState(false);
@@ -34,41 +36,52 @@ function App() {
   const [processedImages, setProcessedImages] = useState<ImageFile[]>([]);
 
   useEffect(() => {
-    loadSettings();
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) loadSettings(session.user.id);
+      else setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) loadSettings(session.user.id);
+      else setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const loadSettings = async () => {
+  const loadSettings = async (userId: string) => {
     try {
+      setLoading(true);
       const savedTheme = themeManager.getSavedTheme() || ('auto' as any);
       themeManager.applyTheme(savedTheme);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      if (user) {
-        const { data } = await supabase
+      if (data) {
+        setSettings(data);
+        themeManager.applyTheme(data.theme as any);
+      } else {
+        const newSettings = {
+          user_id: userId,
+          ...defaultSettings,
+        };
+        const { data: created } = await supabase
           .from('user_settings')
-          .select('*')
-          .eq('user_id', user.id)
+          .insert(newSettings)
+          .select()
           .maybeSingle();
 
-        if (data) {
-          setSettings(data);
-          themeManager.applyTheme(data.theme as any);
-        } else {
-          const newSettings = {
-            user_id: user.id,
-            ...defaultSettings,
-          };
-          const { data: created } = await supabase
-            .from('user_settings')
-            .insert(newSettings)
-            .select()
-            .maybeSingle();
-
-          if (created) {
-            setSettings(created);
-            themeManager.applyTheme(created.theme as any);
-          }
+        if (created) {
+          setSettings(created);
+          themeManager.applyTheme(created.theme as any);
         }
       }
     } catch (error) {
@@ -76,6 +89,11 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
   };
 
   const handleThemeChange = (theme: string) => {
@@ -102,6 +120,24 @@ function App() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                <ImageIcon className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800">Image Pro</h1>
+            </div>
+          </div>
+        </header>
+        <Auth />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
       <header className="bg-white shadow-sm border-b border-gray-200">
@@ -116,6 +152,19 @@ function App() {
                 <p className="text-sm text-gray-600">Professional Batch Image Processing</p>
               </div>
             </div>
+
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
 
             {settings.show_tips && activeTab === 'processor' && (
               <div className="hidden md:block bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
