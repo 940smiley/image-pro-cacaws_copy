@@ -111,6 +111,18 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Parse the stored config (might be JSON or plain string)
+    let ebayAuthToken = aiConfig.api_key_encrypted;
+    let ebayAppId = '';
+    
+    try {
+      const parsedConfig = JSON.parse(aiConfig.api_key_encrypted);
+      ebayAuthToken = parsedConfig.authToken;
+      ebayAppId = parsedConfig.appId;
+    } catch (e) {
+      // Not JSON, use as-is
+    }
+
     // Construct the request body for eBay's Sell API
     const ebayRequestBody = {
       "listing": {
@@ -213,9 +225,9 @@ Deno.serve(async (req: Request) => {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${aiConfig.api_key_encrypted}`,
+          "Authorization": `Bearer ${ebayAuthToken}`,
           "Content-Type": "application/json",
-          "X-EBAY-API-IAF-TOKEN": aiConfig.api_key_encrypted,
+          "X-EBAY-API-IAF-TOKEN": ebayAuthToken,
         },
         body: JSON.stringify(ebayRequestBody),
       }

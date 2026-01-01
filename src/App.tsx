@@ -4,11 +4,12 @@ import BatchProcessor from './components/BatchProcessor';
 import Settings from './components/Settings';
 import ExportPanel from './components/ExportPanel';
 import AiProviderConfig from './components/AiProviderConfig';
+import EbayConfig from './components/EbayConfig';
 import { supabase } from './lib/supabase';
 import { themeManager } from './lib/themeManager';
 import { UserSettings, ProcessingResult, ImageFile } from './types';
 
-type TabType = 'processor' | 'settings' | 'about' | 'export' | 'ai-config';
+type TabType = 'processor' | 'settings' | 'about' | 'export' | 'ai-config' | 'ebay-config';
 
 const defaultSettings: UserSettings = {
   id: '',
@@ -85,6 +86,7 @@ function App() {
     { id: 'processor' as TabType, label: 'Image Processor', icon: ImageIcon },
     { id: 'export' as TabType, label: 'Export & Share', icon: Share2 },
     { id: 'ai-config' as TabType, label: 'AI Providers', icon: SettingsIcon },
+    { id: 'ebay-config' as TabType, label: 'eBay Config', icon: Package },
     { id: 'settings' as TabType, label: 'App Settings', icon: SettingsIcon },
     { id: 'about' as TabType, label: 'About', icon: Info },
   ];
@@ -236,6 +238,9 @@ function App() {
               </div>
             </div>
           </div>
+        )}
+        {activeTab === 'ebay-config' && (
+          <EbayConfig />
         )}
         {activeTab === 'settings' && (
           <Settings settings={settings} onSettingsChange={setSettings} onThemeChange={handleThemeChange} />
