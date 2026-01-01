@@ -1,10 +1,20 @@
 name: Build and Release
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build-web:
@@ -64,7 +74,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+        sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
     - name: Build desktop application
       run: |
@@ -98,9 +108,12 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Install Electron Builder
-      run: npm install --save-dev electron-builder
+    - name: Compile Electron files
+      run: npm run electron:build
 
+    - name: Build Electron application
+      run: npm run electron:build
+      env:
     - name: Build Electron application
       run: npm run build && npx electron-builder --publish=never
       env:
@@ -116,17 +129,23 @@ jobs:
     needs: [build-web]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
     - uses: actions/checkout@v3
       with:
-        token: ${{ secrets.gh_token }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Download all artifacts
+    - name: Download web build artifacts
       uses: actions/download-artifact@v4
+      with:
+        name: web-build
+        path: ./web-build
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
-        github_token: ${{ secrets.gh_token }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./web-build

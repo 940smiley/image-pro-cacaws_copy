@@ -154,6 +154,13 @@ function App() {
             </div>
 
             <div className="flex items-center gap-4">
+              {settings.show_tips && activeTab === 'processor' && (
+                <div className="hidden lg:block bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                  <p className="text-sm text-blue-800">
+                    <strong>Tip:</strong> Upload up to 10 images for batch processing
+                  </p>
+                </div>
+              )}
               <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
               <button
                 onClick={handleSignOut}
@@ -163,16 +170,6 @@ function App() {
                 Sign Out
               </button>
             </div>
-          </div>
-        </div>
-
-            {settings.show_tips && activeTab === 'processor' && (
-              <div className="hidden md:block bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-                <p className="text-sm text-blue-800">
-                  <strong>Tip:</strong> Upload up to 100 images for batch processing
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
@@ -302,13 +299,13 @@ function App() {
               <div className="space-y-4 text-gray-700">
                 <p>
                   Image Pro is a powerful batch image processing platform that allows you to process
-                  up to 100 images simultaneously with advanced features.
+                  up to 10 images simultaneously with advanced features.
                 </p>
 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Key Features</h3>
                   <ul className="list-disc list-inside space-y-2">
-                    <li>Batch processing of up to 100 images</li>
+                    <li>Batch processing of up to 10 images</li>
                     <li>Automatic image expansion before cropping</li>
                     <li>Intelligent auto-enhancement with brightness, contrast, and saturation adjustments</li>
                     <li>Interactive cropping with visual feedback</li>

@@ -38,6 +38,12 @@ export interface ImageFile {
   ebayData?: EbayPricingData;
   isDuplicate?: boolean;
   hash?: string;
+  localAnalysis?: {
+    hasObject: boolean;
+    confidence: number;
+    possibleType: string;
+    summary?: string;
+  };
 }
 
 export interface CropArea {

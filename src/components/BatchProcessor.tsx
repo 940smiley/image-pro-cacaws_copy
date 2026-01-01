@@ -7,6 +7,7 @@ import { analyzeCollectibleWithGemini } from '../utils/apiClient';
 import { generateSmartFilename, generateCollectibleFilename } from '../utils/filenameGenerator';
 import { createMetadataObject } from '../utils/metadataHandler';
 import { computeFileHash, flagDuplicates } from '../utils/duplicateDetection';
+import { scanImageLocally, LocalAnalysis } from '../utils/localScanner';
 import ImageEditor from './ImageEditor';
 import ImageAnalysisPanel from './ImageAnalysisPanel';
 
@@ -15,7 +16,7 @@ interface BatchProcessorProps {
   onProcessingComplete?: (results: ProcessingResult[], images: ImageFile[]) => void;
 }
 
-const MAX_BATCH_SIZE = 100;
+const MAX_BATCH_SIZE = 10;
 
 export default function BatchProcessor({ settings, onProcessingComplete }: BatchProcessorProps) {
   const [images, setImages] = useState<ImageFile[]>([]);
@@ -219,7 +220,11 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
       }
 
       canvas = cropImage(canvas, cropArea);
-      operations.push({ type: 'crop', params: cropArea, timestamp: new Date().toISOString() });
+      operations.push({ 
+        type: 'crop', 
+        params: { ...cropArea } as any, 
+        timestamp: new Date().toISOString() 
+      });
 
       if (settings.auto_enhance) {
         canvas = enhanceImage(canvas);
@@ -235,16 +240,20 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
       const result = URL.createObjectURL(blob);
 
       setImages(prev =>
-        prev.map(img =>
-          img.id === editingImage.id
-            ? {
-                ...img,
-                status: 'completed',
-                result,
-                operations
-              }
-            : img
-        )
+        prev.map(img => {
+          if (img.id === editingImage.id) {
+            if (img.result) {
+              URL.revokeObjectURL(img.result);
+            }
+            return {
+              ...img,
+              status: 'completed',
+              result,
+              operations
+            };
+          }
+          return img;
+        })
       );
 
       setEditingImage(null);
@@ -270,6 +279,22 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
     img.src = editingImage.result;
   };
 
+  const handleLocalScan = async () => {
+    const unscanned = images.filter(img => !img.localAnalysis);
+    if (unscanned.length === 0) return;
+
+    setProcessing(true);
+    for (const image of unscanned) {
+      const analysis: LocalAnalysis = await scanImageLocally(image.file);
+      setImages(prev =>
+        prev.map(img =>
+          img.id === image.id ? { ...img, localAnalysis: analysis } : img
+        )
+      );
+    }
+    setProcessing(false);
+  };
+
   const handleAnalyzeWithGemini = async () => {
     const unanalyzed = images.filter(img => !img.geminiAnalysis);
     if (unanalyzed.length === 0) return;
@@ -282,6 +307,20 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
       setAnalyzingIds(new Set(newAnalyzingIds));
 
       try {
+        // Perform local scan first if not already done
+        let localAnalysis = image.localAnalysis;
+        if (!localAnalysis) {
+          localAnalysis = await scanImageLocally(image.file);
+          setImages(prev =>
+            prev.map(img =>
+              img.id === image.id ? { ...img, localAnalysis } : img
+            )
+          );
+        }
+
+        // If local scan says it's blank/background, maybe skip or warn (optional)
+        // For now, we proceed but we've reduced server "stress" by knowing what it is
+
         // Use specialized analysis for collectibles
         const analysis = collectibleType !== 'other'
           ? await analyzeCollectibleWithGemini(image.file, collectibleType)
@@ -396,6 +435,14 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
               </button>
 
               <div className="flex gap-2">
+                <button
+                  onClick={handleLocalScan}
+                  disabled={processing || images.every(img => img.localAnalysis)}
+                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  <Loader className={`w-5 h-5 ${processing ? 'animate-spin' : ''}`} />
+                  Local Pre-Scan
+                </button>
                 <select
                   value={collectibleType}
                   onChange={(e) => setCollectibleType(e.target.value as any)}
@@ -531,6 +578,12 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
 
               <div className="p-2">
                 <p className={`text-xs ${image.isDuplicate ? 'text-amber-700 font-medium' : 'text-gray-600'} truncate mb-2`}>{image.file.name}</p>
+
+                {image.localAnalysis && !image.geminiAnalysis && (
+                  <div className="mb-2 flex items-center gap-1 text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100">
+                    <span>{image.localAnalysis.possibleType}</span>
+                  </div>
+                )}
 
                 {image.geminiAnalysis && (
                   <div className="mb-2 flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">

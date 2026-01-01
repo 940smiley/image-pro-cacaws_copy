@@ -32,56 +32,66 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
       let width = img.width;
       let height = img.height;
 
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width;
-        width = maxWidth;
+      // Calculate rotated dimensions
+      const radians = (rotation * Math.PI) / 180;
+      const cos = Math.abs(Math.cos(radians));
+      const sin = Math.abs(Math.sin(radians));
+      const rotatedWidth = width * cos + height * sin;
+      const rotatedHeight = width * sin + height * cos;
+
+      // Scale to fit max dimensions
+      let displayWidth = rotatedWidth;
+      let displayHeight = rotatedHeight;
+      let scaleFactor = 1;
+
+      if (displayWidth > maxWidth) {
+        scaleFactor = maxWidth / displayWidth;
+        displayWidth = maxWidth;
+        displayHeight = rotatedHeight * scaleFactor;
       }
-      if (height > maxHeight) {
-        width = (width * maxHeight) / height;
-        height = maxHeight;
+      if (displayHeight > maxHeight) {
+        scaleFactor = Math.min(scaleFactor, maxHeight / displayHeight);
+        displayHeight = maxHeight;
+        displayWidth = rotatedWidth * scaleFactor;
       }
 
-      canvas.width = width;
-      canvas.height = height;
-      setImageSize({ width, height });
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+      setImageSize({ width: displayWidth, height: displayHeight });
 
-      setCropArea({
-        x: width * 0.1,
-        y: height * 0.1,
-        width: width * 0.8,
-        height: height * 0.8,
-      });
+      const newCropArea = {
+        x: displayWidth * 0.1,
+        y: displayHeight * 0.1,
+        width: displayWidth * 0.8,
+        height: displayHeight * 0.8,
+      };
+      setCropArea(newCropArea);
 
-      draw(ctx, img, width, height, {
-        x: width * 0.1,
-        y: height * 0.1,
-        width: width * 0.8,
-        height: height * 0.8,
-      }, rotation);
+      draw(ctx, img, displayWidth, displayHeight, newCropArea, rotation, img.width * (displayWidth / rotatedWidth), img.height * (displayWidth / rotatedWidth));
     };
     img.src = image;
   }, [image, rotation]);
 
-  const draw = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, width: number, height: number, area: CropArea, rot: number) => {
-    ctx.clearRect(0, 0, width, height);
+  const draw = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, canvasWidth: number, canvasHeight: number, area: CropArea, rot: number, imgDrawWidth: number, imgDrawHeight: number) => {
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     
     ctx.save();
-    ctx.translate(width / 2, height / 2);
+    ctx.translate(canvasWidth / 2, canvasHeight / 2);
     ctx.rotate((rot * Math.PI) / 180);
-    ctx.drawImage(img, -width / 2, -height / 2, width, height);
+    ctx.drawImage(img, -imgDrawWidth / 2, -imgDrawHeight / 2, imgDrawWidth, imgDrawHeight);
     ctx.restore();
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     ctx.save();
     ctx.beginPath();
     ctx.rect(area.x, area.y, area.width, area.height);
     ctx.clip();
     
-    ctx.translate(width / 2, height / 2);
+    ctx.translate(canvasWidth / 2, canvasHeight / 2);
     ctx.rotate((rot * Math.PI) / 180);
-    ctx.drawImage(img, -width / 2, -height / 2, width, height);
+    ctx.drawImage(img, -imgDrawWidth / 2, -imgDrawHeight / 2, imgDrawWidth, imgDrawHeight);
     ctx.restore();
 
     if (showGrid) {
@@ -149,7 +159,14 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
     const ctx = canvas.getContext('2d');
     if (ctx) {
       const img = new Image();
-      img.onload = () => draw(ctx, img, imageSize.width, imageSize.height, newCropArea, rotation);
+      img.onload = () => {
+        const radians = (rotation * Math.PI) / 180;
+        const cos = Math.abs(Math.cos(radians));
+        const sin = Math.abs(Math.sin(radians));
+        const rotatedWidth = img.width * cos + img.height * sin;
+        const scaleFactor = imageSize.width / rotatedWidth;
+        draw(ctx, img, imageSize.width, imageSize.height, newCropArea, rotation, img.width * scaleFactor, img.height * scaleFactor);
+      };
       img.src = image;
     }
   };
@@ -173,7 +190,14 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
     const ctx = canvas?.getContext('2d');
     if (ctx && canvas) {
       const img = new Image();
-      img.onload = () => draw(ctx, img, imageSize.width, imageSize.height, newCropArea, rotation);
+      img.onload = () => {
+        const radians = (rotation * Math.PI) / 180;
+        const cos = Math.abs(Math.cos(radians));
+        const sin = Math.abs(Math.sin(radians));
+        const rotatedWidth = img.width * cos + img.height * sin;
+        const scaleFactor = imageSize.width / rotatedWidth;
+        draw(ctx, img, imageSize.width, imageSize.height, newCropArea, rotation, img.width * scaleFactor, img.height * scaleFactor);
+      };
       img.src = image;
     }
   };
@@ -184,8 +208,14 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
 
     const img = new Image();
     img.onload = () => {
-      const scaleX = img.width / imageSize.width;
-      const scaleY = img.height / imageSize.height;
+      const radians = (rotation * Math.PI) / 180;
+      const cos = Math.abs(Math.cos(radians));
+      const sin = Math.abs(Math.sin(radians));
+      const rotatedWidth = img.width * cos + img.height * sin;
+      const rotatedHeight = img.width * sin + img.height * cos;
+
+      const scaleX = rotatedWidth / imageSize.width;
+      const scaleY = rotatedHeight / imageSize.height;
 
       const actualCropArea = {
         x: cropArea.x * scaleX,
