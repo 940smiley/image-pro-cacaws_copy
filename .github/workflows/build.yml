@@ -102,7 +102,7 @@ jobs:
       run: npm run electron:build
 
     - name: Build Electron application
-      run: npm run build && npx electron-builder --publish=never
+      run: npm run electron:build
       env:
     - name: Build Electron application
       run: npm run build && npx electron-builder --publish=never
