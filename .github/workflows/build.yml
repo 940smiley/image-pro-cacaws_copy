@@ -98,8 +98,14 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Compile Electron files
+      run: npm run electron:build
+
     - name: Build Electron application
       run: npm run electron:build
+      env:
+    - name: Build Electron application
+      run: npm run build && npx electron-builder --publish=never
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
