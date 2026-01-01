@@ -110,7 +110,7 @@ jobs:
         path: dist_electron/*
 
   deploy:
-    needs: [build-web, build-desktop, build-electron]
+    needs: [build-web]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
