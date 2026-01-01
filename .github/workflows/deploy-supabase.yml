@@ -31,12 +31,12 @@ jobs:
 
       - name: Deploy Edge Functions
         run: |
-          supabase functions deploy analyze-image-gemini --no-verify-jwt
-          supabase functions deploy ebay-create-listing --no-verify-jwt
-          supabase functions deploy ebay-search-pricing --no-verify-jwt
-          supabase functions deploy embed-metadata --no-verify-jwt
-          supabase functions deploy facebook-post-generation --no-verify-jwt
-          supabase functions deploy generate-csv-export --no-verify-jwt
-          supabase functions deploy generate-pdf-report --no-verify-jwt
-          supabase functions deploy multi-provider-ai --no-verify-jwt
-          supabase functions deploy rename-images --no-verify-jwt
+          supabase functions deploy analyze-image-gemini --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy ebay-create-listing --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy ebay-search-pricing --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy embed-metadata --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy facebook-post-generation --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy generate-csv-export --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy generate-pdf-report --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy multi-provider-ai --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy rename-images --no-verify-jwt --import-map supabase/import_map.json
