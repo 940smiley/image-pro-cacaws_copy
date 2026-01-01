@@ -2,6 +2,8 @@
   "name": "vite-react-typescript-starter",
   "private": true,
   "version": "0.0.0",
+  "description": "Image Pro - Advanced image processing and analysis tool with AI capabilities",
+  "author": "940smiley",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +16,11 @@
     "build:all": "bash scripts/build-and-release.sh",
     "build:all:win": "scripts\\build-and-release.bat",
     "test": "npm run typecheck && npm run lint",
-    "release": "bash scripts/build-and-release.sh"
+    "release": "bash scripts/build-and-release.sh",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "electron": "electron .",
+    "electron:dev": "npm run build && npm run build:electron && electron .",
+    "electron:build": "npm run build && npm run build:electron && electron-builder --publish=never"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
@@ -28,6 +34,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "electron": "^28.0.0",
+    "electron-builder": "^26.0.12",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -41,5 +49,21 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
     "vite": "^5.4.2"
+  },
+  "main": "electron-dist/main.js",
+  "build": {
+    "appId": "com.940smiley.imagepro",
+    "productName": "Image Pro",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron-dist/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.graphics-design"
+    }
   }
 }
