@@ -84,11 +84,26 @@ EBAY_APP_ID=your_ebay_app_id
 EBAY_ACCESS_TOKEN=your_ebay_access_token
 VITE_EBAY_CERT_ID=your_ebay_cert_id
 VITE_EBAY_AUTH_TOKEN=your_ebay_auth_token
-```
+VITE\_SUPABASE\_URL: Your Supabase project URL. You can find this in your Supabase dashboard.
+VITE\_SUPABASE\_ANON\_KEY: Your Supabase anon key. You can find this in your Supabase dashboard.
+GEMINI\_API\_KEY: Your Google Gemini API key. You need to create a Google Cloud project and enable the Gemini API to obtain this key. See https://makersuite.google.com/app/apikey for more information.
+EBAY\_APP\_ID: Your eBay application ID. You need to register as an eBay developer to obtain this ID. See https://developer.ebay.com/ for more information.
+EBAY\_ACCESS\_TOKEN: Your eBay access token. This is required for making API calls to eBay on behalf of a user. This can be a user token or an application token depending on the specific API calls you are making.
+VITE\_EBAY\_CERT\_ID: Your eBay certificate ID, obtained when you registered as a developer.
+VITE\_EBAY\_AUTH\_TOKEN: Your eBay authentication token, obtained after a user authorizes your application to access their eBay account. This is often needed for listing items.
+It is recommended to keep these keys secure and not commit them directly to your repository. Use environment variables or a secure configuration management system.
 
-## Project Structure
+Running Supabase Locally (Optional)
+If you want to run Supabase locally for development, you can use the Supabase CLI. Follow these steps:
 
-```
+Install the Supabase CLI: Follow the instructions on the Supabase website: https://supabase.com/docs/cli/getting-started
+Initialize Supabase: Run supabase init in the supabase directory.
+Start Supabase: Run supabase start in the supabase directory. This will start the Supabase services in Docker containers.
+Apply Migrations: Run supabase db push to apply the database migrations.
+Generate Types: Run supabase gen types typescript --project-id your-project-id > types/supabase.ts to generate the TypeScript types for your Supabase database. Replace your-project-id with your Supabase Project ID, which can be found in the Supabase dashboard.
+Note: Running Supabase locally requires Docker to be installed and running on your system.
+
+Project Structure
 image-pro/
 ├── src/                    # Source code
 │   ├── components/         # React components
