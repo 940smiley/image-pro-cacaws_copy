@@ -33,7 +33,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           # Run the script and capture output to a temporary file
-          node scripts/ai_issue_handler.js > ai_response.md
+          node scripts/ai_issue_handler.cjs > ai_response.md
           
           # Read file content into a variable (handling multiline)
           echo "RESPONSE<<EOF" >> $GITHUB_ENV
