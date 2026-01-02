@@ -270,7 +270,7 @@ function App() {
                   <p className="text-gray-600 mb-4">List your items directly on eBay or share on social media platforms.</p>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => alert('eBay listing functionality coming soon!')}
+                      onClick={() => setActiveTab('ebay-config')}
                       className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
                     >
                       <Upload className="w-5 h-5" />

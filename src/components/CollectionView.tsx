@@ -1,13 +1,15 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, ExternalLink, Tag, Calendar, ShieldCheck } from 'lucide-react';
+import { Trash2, ExternalLink, Tag, Calendar, ShieldCheck, RefreshCw } from 'lucide-react';
 import { ImageFile } from '../types';
 
 interface CollectionViewProps {
     images: ImageFile[];
     onRemove?: (id: string) => void;
+    onReprocess?: (id: string) => void;
+    onReprocessAll?: () => void;
 }
 
-export default function CollectionView({ images, onRemove }: CollectionViewProps) {
+export default function CollectionView({ images, onRemove, onReprocess, onReprocessAll }: CollectionViewProps) {
     if (images.length === 0) {
         return (
             <div className="max-w-7xl mx-auto p-6 text-center py-24">
@@ -33,6 +35,15 @@ export default function CollectionView({ images, onRemove }: CollectionViewProps
                     <h2 className="text-4xl font-black premium-gradient-text mb-2">My Collection</h2>
                     <p className="text-gray-500 font-medium">Your curated archive of {images.length} items</p>
                 </div>
+                {onReprocessAll && (
+                    <button
+                        onClick={onReprocessAll}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Reprocess All
+                    </button>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -75,6 +86,14 @@ export default function CollectionView({ images, onRemove }: CollectionViewProps
                                                 )}
                                             </div>
                                             <div className="flex gap-2">
+                                                {onReprocess && (
+                                                    <button
+                                                        onClick={() => onReprocess(image.id)}
+                                                        className="p-2 text-blue-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+                                                    >
+                                                        <RefreshCw className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => onRemove?.(image.id)}
                                                     className="p-2 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
