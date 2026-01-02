@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Upload, Trash2, Play, CheckCircle, Loader, Zap, Package } from 'lucide-react';
+import { Upload, Trash2, CheckCircle, Loader, Zap, Package, Edit } from 'lucide-react';
 import { ImageFile, UserSettings, CropArea, ProcessingResult } from '../types';
 import { loadImageToCanvas, expandImage, cropImage, enhanceImage, rotateImage, downloadImage } from '../utils/imageProcessing';
 import { analyzeImageWithGemini } from '../utils/apiClient';
@@ -74,6 +74,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
         file,
         preview: URL.createObjectURL(file),
         status: 'pending' as const,
+        side: 'none' as const,
         operations: [],
         hash
       };
@@ -125,19 +126,66 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
     }
   };
 
-  const handleProcessAll = async () => {
+  const handleUnifiedProcess = async () => {
+    const pending = images.filter(img => img.status !== 'completed' || !img.geminiAnalysis);
+    if (pending.length === 0) return;
+
     setProcessing(true);
-    const pending = images.filter(img => img.status !== 'completed');
-    const CHUNK = 5;
+    setAnalyzing(true);
+
+    const processAndAnalyze = async (image: ImageFile) => {
+      try {
+        let currentImg = { ...image };
+
+        // Step 1: Enhancement (if not already completed)
+        if (currentImg.status !== 'completed') {
+          setImages(prev => prev.map(img => img.id === image.id ? { ...img, status: 'processing', statusText: 'Enhancing...' } : img));
+          currentImg = await processImage(currentImg);
+        }
+
+        // Step 2: AI Analysis
+        setImages(prev => prev.map(img => img.id === image.id ? { ...img, status: 'analyzing', statusText: 'Identifying...' } : img));
+
+        const analysis = await (collectibleType !== 'other'
+          ? analyzeCollectibleWithGemini(currentImg.file, collectibleType)
+          : analyzeImageWithGemini(currentImg.file));
+
+        setImages(prev => prev.map(img => img.id === image.id ? { ...img, statusText: 'Renaming...' } : img));
+
+        const extension = currentImg.file.name.split('.').pop();
+        const objectName = analysis.objects?.[0]
+          ? analysis.objects[0].replace(/[^a-z0-9]/gi, '_').toLowerCase()
+          : 'item';
+        const timestamp = new Date().getTime().toString().slice(-4);
+        const nameSuffix = currentImg.side !== 'none' ? `_${currentImg.side}` : '';
+        const newName = `${objectName}${nameSuffix}_${timestamp}.${extension}`;
+
+        setImages(prev => prev.map(img => img.id === image.id ? {
+          ...img,
+          status: 'completed',
+          statusText: 'Ready',
+          geminiAnalysis: analysis,
+          file: new File([currentImg.file], newName, { type: currentImg.file.type })
+        } : img));
+
+      } catch (e) {
+        console.error(e);
+        setImages(prev => prev.map(img => img.id === image.id ? { ...img, status: 'error', error: 'Automation failed' } : img));
+      }
+    };
+
+    const CHUNK = 2;
     for (let i = 0; i < pending.length; i += CHUNK) {
-      const batch = pending.slice(i, i + CHUNK);
-      setImages(prev => prev.map(img => batch.some(b => b.id === img.id) ? { ...img, status: 'processing' } : img));
-      const results = await Promise.all(batch.map(img => processImage(img)));
-      setImages(prev => prev.map(img => results.find(r => r.id === img.id) || img));
+      await Promise.all(pending.slice(i, i + CHUNK).map(processAndAnalyze));
     }
+
     setProcessing(false);
+    setAnalyzing(false);
   };
 
+  const setItemSide = (id: string, side: 'front' | 'back' | 'none') => {
+    setImages(prev => prev.map(img => img.id === id ? { ...img, side } : img));
+  };
 
   const handleEditImage = (image: ImageFile) => setEditingImage(image);
 
@@ -172,64 +220,6 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
   };
 
 
-  const handleAnalyzeWithGemini = async () => {
-    const unanalyzed = images.filter(img => !img.geminiAnalysis && img.status !== 'analyzing');
-    if (unanalyzed.length === 0) return;
-
-    setAnalyzing(true);
-
-    const analyze = async (image: ImageFile) => {
-      try {
-        // Step 1: Identification
-        setImages(prev => prev.map(img => img.id === image.id ? {
-          ...img,
-          status: 'analyzing',
-          statusText: 'Identifying item...'
-        } : img));
-
-        const analysis = await (collectibleType !== 'other'
-          ? analyzeCollectibleWithGemini(image.file, collectibleType)
-          : analyzeImageWithGemini(image.file));
-
-        // Step 2: Smart Renaming
-        setImages(prev => prev.map(img => img.id === image.id ? {
-          ...img,
-          statusText: 'Generating unique name...'
-        } : img));
-
-        const extension = image.file.name.split('.').pop();
-        const objectName = analysis.objects?.[0]
-          ? analysis.objects[0].replace(/[^a-z0-9]/gi, '_').toLowerCase()
-          : 'item';
-        const timestamp = new Date().getTime().toString().slice(-4);
-        const newName = `${objectName}_${timestamp}.${extension}`;
-
-        // Step 3: Finalizing
-        setImages(prev => prev.map(img => img.id === image.id ? {
-          ...img,
-          status: 'completed',
-          statusText: 'Analysis complete',
-          geminiAnalysis: analysis,
-          file: new File([image.file], newName, { type: image.file.type })
-        } : img));
-
-      } catch (e) {
-        console.error(e);
-        setImages(prev => prev.map(img => img.id === image.id ? {
-          ...img,
-          status: 'error',
-          error: 'Analysis failed'
-        } : img));
-      }
-    };
-
-    const CHUNK = 2; // Slower chunking for visible feedback
-    for (let i = 0; i < unanalyzed.length; i += CHUNK) {
-      await Promise.all(unanalyzed.slice(i, i + CHUNK).map(analyze));
-    }
-    setAnalyzing(false);
-  };
-
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
       <motion.div
@@ -261,12 +251,12 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                 className="flex gap-2"
               >
                 <button
-                  onClick={handleProcessAll}
-                  disabled={processing}
-                  className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-2xl hover:bg-green-700 disabled:bg-gray-400 font-bold shadow-lg hover:shadow-green-500/20 active:scale-95"
+                  onClick={handleUnifiedProcess}
+                  disabled={processing || analyzing}
+                  className="flex items-center gap-2 px-6 py-3 premium-gradient text-white rounded-2xl hover:opacity-90 disabled:bg-gray-400 font-bold shadow-lg hover:shadow-purple-500/20 active:scale-95"
                 >
-                  {processing ? <Loader className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
-                  Process
+                  {processing || analyzing ? <Loader className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
+                  Run Full Automation
                 </button>
                 <button
                   onClick={handleClearAll}
@@ -287,23 +277,28 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
           className="flex flex-wrap items-center gap-4 p-4 glass-card rounded-2xl"
         >
           <div className="flex items-center gap-4 flex-1">
-            <select
-              value={collectibleType}
-              onChange={(e) => setCollectibleType(e.target.value as 'stamp' | 'trading-card' | 'postcard' | 'war-letter' | 'other')}
-              className="px-4 py-2 bg-white/50 rounded-xl border border-gray-200 font-bold focus:ring-2 ring-purple-500 transition-all outline-none"
-            >
-              <option value="other">General Mode</option>
-              <option value="stamp">Stamps</option>
-              <option value="trading-card">Cards</option>
-              <option value="postcard">Postcards</option>
-            </select>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Analysis Mode</span>
+              <select
+                value={collectibleType}
+                onChange={(e) => setCollectibleType(e.target.value as 'stamp' | 'trading-card' | 'postcard' | 'war-letter' | 'other')}
+                className="px-4 py-2 bg-white/50 rounded-xl border border-gray-200 font-bold focus:ring-2 ring-purple-500 transition-all outline-none text-sm"
+              >
+                <option value="other">General Mode</option>
+                <option value="stamp">Stamps</option>
+                <option value="trading-card">Cards</option>
+                <option value="postcard">Postcards</option>
+                <option value="war-letter">War Letters</option>
+              </select>
+            </div>
+
             <button
-              onClick={handleAnalyzeWithGemini}
-              disabled={analyzing}
-              className="flex items-center gap-2 px-6 py-2 premium-gradient text-white rounded-xl font-bold hover:opacity-90 active:scale-95 shadow-lg shadow-purple-500/20"
+              onClick={handleUnifiedProcess}
+              disabled={processing || analyzing}
+              className="flex items-center gap-2 px-8 py-3 premium-gradient text-white rounded-xl font-bold hover:opacity-90 active:scale-95 shadow-lg shadow-purple-500/20 mt-5"
             >
-              {analyzing ? <Loader className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              Run AI Analysis
+              {processing || analyzing ? <Loader className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
+              Full Automation
             </button>
           </div>
 
@@ -372,16 +367,45 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
               >
                 <img src={image.result || image.preview} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
-                  <p className="text-white text-[10px] font-bold truncate mb-3">{image.file.name}</p>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-white text-[10px] font-bold truncate">{image.file.name}</p>
+                    <div className="flex gap-1">
+                      <button onClick={() => handleEditImage(image)} className="p-1.5 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all">
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => handleRemoveImage(image.id)} className="p-1.5 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-all">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="flex gap-2">
-                    <button onClick={() => image.geminiAnalysis ? setSelectedAnalysis(image) : handleEditImage(image)} className="flex-1 py-2 bg-white text-black rounded-xl text-[10px] font-black hover:bg-gray-100 active:scale-95 transition-all">
-                      {image.geminiAnalysis ? 'INSIGHTS' : 'EDIT'}
+                    <button
+                      onClick={() => setItemSide(image.id, 'front')}
+                      className={cn(
+                        "flex-1 py-1.5 rounded-lg text-[9px] font-black transition-all",
+                        image.side === 'front' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/40" : "bg-white/10 text-white/60 hover:bg-white/20"
+                      )}
+                    >
+                      FRONT
                     </button>
-                    <button onClick={() => handleRemoveImage(image.id)} className="p-2 bg-red-500 text-white rounded-xl hover:bg-red-600 active:scale-95 transition-all">
-                      <Trash2 className="w-3 h-3" />
+                    <button
+                      onClick={() => setItemSide(image.id, 'back')}
+                      className={cn(
+                        "flex-1 py-1.5 rounded-lg text-[9px] font-black transition-all",
+                        image.side === 'back' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/40" : "bg-white/10 text-white/60 hover:bg-white/20"
+                      )}
+                    >
+                      BACK
                     </button>
                   </div>
+
+                  {image.geminiAnalysis && (
+                    <button onClick={() => setSelectedAnalysis(image)} className="w-full py-2 bg-white text-black rounded-xl text-[10px] font-black hover:bg-gray-100 active:scale-95 transition-all">
+                      VIEW INSIGHTS
+                    </button>
+                  )}
                 </div>
 
                 {image.status === 'processing' && (

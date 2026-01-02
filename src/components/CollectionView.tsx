@@ -64,9 +64,16 @@ export default function CollectionView({ images, onRemove }: CollectionViewProps
                                 <div className="p-8 sm:w-1/2 flex flex-col justify-between">
                                     <div>
                                         <div className="flex justify-between items-start mb-4">
-                                            <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-full border border-purple-100 italic">
-                                                {details?.type || 'Collectible'}
-                                            </span>
+                                            <div className="flex flex-col gap-2">
+                                                <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-full border border-purple-100 italic w-fit">
+                                                    {details?.type || 'Collectible'}
+                                                </span>
+                                                {image.side !== 'none' && (
+                                                    <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 w-fit">
+                                                        {image.side.toUpperCase()}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => onRemove?.(image.id)}
