@@ -30,7 +30,9 @@ export interface ImageFile {
   id: string;
   file: File;
   preview: string;
-  status: 'pending' | 'processing' | 'completed' | 'error';
+  status: 'pending' | 'processing' | 'analyzing' | 'completed' | 'error';
+  statusText?: string;
+  side: 'front' | 'back' | 'none';
   result?: string;
   operations: ProcessingOperation[];
   error?: string;

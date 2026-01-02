@@ -10,9 +10,10 @@ import Auth from './components/Auth';
 import { supabase } from './lib/supabase';
 import { themeManager, Theme } from './lib/themeManager';
 import { UserSettings, ProcessingResult, ImageFile } from './types';
-import { TrendingUp } from 'lucide-react';
+import CollectionView from './components/CollectionView';
+import { TrendingUp, FolderHeart } from 'lucide-react';
 
-type TabType = 'processor' | 'settings' | 'about' | 'export' | 'ai-config' | 'ebay-config' | 'dashboard';
+type TabType = 'processor' | 'collection' | 'settings' | 'about' | 'export' | 'ai-config' | 'ebay-config' | 'dashboard';
 
 const defaultSettings: UserSettings = {
   id: '',
@@ -36,6 +37,7 @@ function App() {
   const [showAiProviderConfig, setShowAiProviderConfig] = useState(false);
   const [processingResults, setProcessingResults] = useState<ProcessingResult[]>([]);
   const [processedImages, setProcessedImages] = useState<ImageFile[]>([]);
+  const [collectionImages, setCollectionImages] = useState<ImageFile[]>([]);
 
   useEffect(() => {
     // Check initial session
@@ -106,6 +108,7 @@ function App() {
 
   const tabs = [
     { id: 'processor' as TabType, label: 'Image Processor', icon: ImageIcon },
+    { id: 'collection' as TabType, label: 'My Collection', icon: FolderHeart },
     { id: 'dashboard' as TabType, label: 'Market Insights', icon: TrendingUp },
     { id: 'export' as TabType, label: 'Export & Share', icon: Share2 },
     { id: 'ai-config' as TabType, label: 'AI Providers', icon: SettingsIcon },
@@ -210,6 +213,16 @@ function App() {
             onProcessingComplete={(results, images) => {
               setProcessingResults(results);
               setProcessedImages(images);
+              // Prompt or auto-add to local collection state for this session
+              setCollectionImages(prev => [...prev, ...images]);
+            }}
+          />
+        )}
+        {activeTab === 'collection' && (
+          <CollectionView
+            images={collectionImages}
+            onRemove={(id: string) => {
+              setCollectionImages(prev => prev.filter(img => img.id !== id));
             }}
           />
         )}

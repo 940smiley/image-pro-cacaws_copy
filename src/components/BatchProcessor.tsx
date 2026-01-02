@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Upload, Trash2, Play, CheckCircle, Loader, Zap } from 'lucide-react';
+import { Upload, Trash2, Play, CheckCircle, Loader, Zap, Package } from 'lucide-react';
 import { ImageFile, UserSettings, CropArea, ProcessingResult } from '../types';
 import { loadImageToCanvas, expandImage, cropImage, enhanceImage, rotateImage, downloadImage } from '../utils/imageProcessing';
 import { analyzeImageWithGemini } from '../utils/apiClient';
@@ -173,17 +173,57 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
 
 
   const handleAnalyzeWithGemini = async () => {
-    const unanalyzed = images.filter(img => !img.geminiAnalysis);
+    const unanalyzed = images.filter(img => !img.geminiAnalysis && img.status !== 'analyzing');
+    if (unanalyzed.length === 0) return;
+
     setAnalyzing(true);
+
     const analyze = async (image: ImageFile) => {
       try {
-        const analysis = await (collectibleType !== 'other' ? analyzeCollectibleWithGemini(image.file, collectibleType) : analyzeImageWithGemini(image.file));
+        // Step 1: Identification
+        setImages(prev => prev.map(img => img.id === image.id ? {
+          ...img,
+          status: 'analyzing',
+          statusText: 'Identifying item...'
+        } : img));
+
+        const analysis = await (collectibleType !== 'other'
+          ? analyzeCollectibleWithGemini(image.file, collectibleType)
+          : analyzeImageWithGemini(image.file));
+
+        // Step 2: Smart Renaming
+        setImages(prev => prev.map(img => img.id === image.id ? {
+          ...img,
+          statusText: 'Generating unique name...'
+        } : img));
+
         const extension = image.file.name.split('.').pop();
-        const newName = analysis.objects?.[0] ? `${analysis.objects[0].replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${extension}` : image.file.name;
-        setImages(prev => prev.map(img => img.id === image.id ? { ...img, geminiAnalysis: analysis, file: new File([image.file], newName, { type: image.file.type }) } : img));
-      } catch (e) { console.error(e); }
+        const objectName = analysis.objects?.[0]
+          ? analysis.objects[0].replace(/[^a-z0-9]/gi, '_').toLowerCase()
+          : 'item';
+        const timestamp = new Date().getTime().toString().slice(-4);
+        const newName = `${objectName}_${timestamp}.${extension}`;
+
+        // Step 3: Finalizing
+        setImages(prev => prev.map(img => img.id === image.id ? {
+          ...img,
+          status: 'completed',
+          statusText: 'Analysis complete',
+          geminiAnalysis: analysis,
+          file: new File([image.file], newName, { type: image.file.type })
+        } : img));
+
+      } catch (e) {
+        console.error(e);
+        setImages(prev => prev.map(img => img.id === image.id ? {
+          ...img,
+          status: 'error',
+          error: 'Analysis failed'
+        } : img));
+      }
     };
-    const CHUNK = 3;
+
+    const CHUNK = 2; // Slower chunking for visible feedback
     for (let i = 0; i < unanalyzed.length; i += CHUNK) {
       await Promise.all(unanalyzed.slice(i, i + CHUNK).map(analyze));
     }
@@ -272,6 +312,30 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
             <span className="text-green-500">READY: {images.filter(i => i.status === 'completed').length}</span>
             <span className="text-purple-500">ANALYZED: {images.filter(i => i.geminiAnalysis).length}</span>
           </div>
+
+          {images.some(img => img.status === 'completed' || img.geminiAnalysis) && (
+            <button
+              onClick={() => {
+                const results: ProcessingResult[] = images
+                  .filter(img => img.status === 'completed' || img.geminiAnalysis)
+                  .map(img => ({
+                    id: img.id,
+                    originalFilename: img.file.name,
+                    newFilename: img.file.name, // The file object already has the generic/new name
+                    analysis: img.geminiAnalysis || { description: '', objects: [], categories: [], colors: [], confidence: 0 },
+                    operations: img.operations,
+                    metadata: img.geminiAnalysis ? createMetadataObject(img.geminiAnalysis, img.operations, img.file.name) : {},
+                    exportFormats: {}
+                  }));
+                if (onProcessingComplete) onProcessingComplete(results, images.filter(img => img.status === 'completed' || img.geminiAnalysis));
+                alert('Sent to Collection!');
+              }}
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 active:scale-95 shadow-lg shadow-blue-500/20"
+            >
+              <Package className="w-4 h-4" />
+              Transfer to Collection
+            </button>
+          )}
         </motion.div>
       )}
 
@@ -326,9 +390,24 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                   </div>
                 )}
 
-                <div className="absolute top-4 right-4">
+                {image.status === 'analyzing' && (
+                  <div className="absolute inset-0 bg-purple-600/30 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center">
+                    <Zap className="w-8 h-8 text-white animate-pulse mb-2" />
+                    <p className="text-white text-[10px] font-black uppercase tracking-widest mb-2">{image.statusText}</p>
+                    <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '100%' }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                        className="w-full h-full bg-white shadow-[0_0_10px_purple]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="absolute top-4 right-4 flex flex-col gap-2">
                   {image.status === 'completed' && <div className="bg-green-500 text-white p-1.5 rounded-full shadow-lg"><CheckCircle className="w-3 h-3" /></div>}
-                  {image.geminiAnalysis && <div className="bg-purple-600 text-white p-1.5 rounded-full shadow-lg mt-2"><Zap className="w-3 h-3" /></div>}
+                  {image.geminiAnalysis && <div className="bg-purple-600 text-white p-1.5 rounded-full shadow-lg"><Zap className="w-3 h-3" /></div>}
                 </div>
               </motion.div>
             ))}
