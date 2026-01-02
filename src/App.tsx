@@ -106,6 +106,22 @@ function App() {
     themeManager.initializeTheme(theme);
   };
 
+  const handleReprocessItem = (id: string) => {
+    const itemToReprocess = collectionImages.find(img => img.id === id);
+    if (itemToReprocess) {
+      setCollectionImages(prev => prev.filter(img => img.id !== id));
+      // Put it back in the processing queue
+      setProcessedImages(prev => [...prev, itemToReprocess]);
+      setActiveTab('processor');
+    }
+  };
+
+  const handleReprocessAll = () => {
+    setProcessedImages(prev => [...prev, ...collectionImages]);
+    setCollectionImages([]);
+    setActiveTab('processor');
+  };
+
   const tabs = [
     { id: 'processor' as TabType, label: 'Image Processor', icon: ImageIcon },
     { id: 'collection' as TabType, label: 'My Collection', icon: FolderHeart },
@@ -224,6 +240,8 @@ function App() {
             onRemove={(id: string) => {
               setCollectionImages(prev => prev.filter(img => img.id !== id));
             }}
+            onReprocess={handleReprocessItem}
+            onReprocessAll={handleReprocessAll}
           />
         )}
         {activeTab === 'dashboard' && (
