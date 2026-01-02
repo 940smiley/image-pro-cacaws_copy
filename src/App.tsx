@@ -39,383 +39,845 @@ function App() {
   const [processedImages, setProcessedImages] = useState<ImageFile[]>([]);
   const [collectionImages, setCollectionImages] = useState<ImageFile[]>([]);
 
-  useEffect(() => {
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser) loadSettings(currentUser.id);
-      else setLoading(false);
-    });
+  
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser) loadSettings(currentUser.id);
-      else setLoading(false);
-    });
+    useEffect(() => {
 
-    return () => subscription.unsubscribe();
-  }, []);
+      // Check initial session
 
-  const loadSettings = async (userId: string) => {
-    try {
-      setLoading(true);
-      const savedTheme = (themeManager.getSavedTheme() || 'auto') as Theme;
-      themeManager.applyTheme(savedTheme);
+      supabase.auth.getSession().then(({ data: { session } }) => {
 
-      const { data } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+        const currentUser = session?.user ?? null;
 
-      if (data) {
-        setSettings(data);
-        themeManager.applyTheme(data.theme as Theme);
-      } else {
-        const newSettings = {
-          ...defaultSettings,
-          user_id: userId,
-        };
-        const { data: created } = await supabase
+        setUser(currentUser);
+
+        if (currentUser) loadUserData(currentUser.id);
+
+        else setLoading(false);
+
+      });
+
+  
+
+      // Listen for auth changes
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+
+        const currentUser = session?.user ?? null;
+
+        setUser(currentUser);
+
+        if (currentUser) loadUserData(currentUser.id);
+
+        else {
+
+          setLoading(false);
+
+          setCollectionImages([]);
+
+        }
+
+      });
+
+  
+
+      return () => subscription.unsubscribe();
+
+    }, []);
+
+  
+
+    const loadUserData = async (userId: string) => {
+
+      try {
+
+        setLoading(true);
+
+        const savedTheme = (themeManager.getSavedTheme() || 'auto') as Theme;
+
+        themeManager.applyTheme(savedTheme);
+
+  
+
+        // Load user settings
+
+        const { data: settingsData } = await supabase
+
           .from('user_settings')
-          .insert(newSettings)
-          .select()
+
+          .select('*')
+
+          .eq('user_id', userId)
+
           .maybeSingle();
 
-        if (created) {
-          setSettings(created);
-          themeManager.applyTheme(created.theme as Theme);
+  
+
+        if (settingsData) {
+
+          setSettings(settingsData);
+
+          themeManager.applyTheme(settingsData.theme as Theme);
+
+        } else {
+
+          const newSettings = { ...defaultSettings, user_id: userId };
+
+          const { data: created } = await supabase.from('user_settings').insert(newSettings).select().maybeSingle();
+
+          if (created) {
+
+            setSettings(created);
+
+            themeManager.applyTheme(created.theme as Theme);
+
+          }
+
         }
+
+  
+
+        // Load collection images
+
+        const { data: collectionData, error: collectionError } = await supabase
+
+          .from('collection_images')
+
+          .select('image_file')
+
+          .eq('user_id', userId);
+
+  
+
+        if (collectionError) {
+
+          console.error('Error loading collection images:', collectionError);
+
+        } else {
+
+          setCollectionImages(collectionData.map((item: any) => item.image_file));
+
+        }
+
+  
+
+      } catch (error) {
+
+        console.error('Error loading user data:', error);
+
+      } finally {
+
+        setLoading(false);
+
       }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-  };
+    };
 
-  const handleThemeChange = (theme: Theme) => {
-    themeManager.initializeTheme(theme);
-  };
+  
 
-  const handleReprocessItem = (id: string) => {
-    const itemToReprocess = collectionImages.find(img => img.id === id);
-    if (itemToReprocess) {
-      setCollectionImages(prev => prev.filter(img => img.id !== id));
-      // Put it back in the processing queue
-      setProcessedImages(prev => [...prev, itemToReprocess]);
-      setActiveTab('processor');
-    }
-  };
+    const handleSignOut = async () => {
 
-  const handleReprocessAll = () => {
-    setProcessedImages(prev => [...prev, ...collectionImages]);
-    setCollectionImages([]);
-    setActiveTab('processor');
-  };
+      await supabase.auth.signOut();
 
-  const tabs = [
-    { id: 'processor' as TabType, label: 'Image Processor', icon: ImageIcon },
-    { id: 'collection' as TabType, label: 'My Collection', icon: FolderHeart },
-    { id: 'dashboard' as TabType, label: 'Market Insights', icon: TrendingUp },
-    { id: 'export' as TabType, label: 'Export & Share', icon: Share2 },
-    { id: 'ai-config' as TabType, label: 'AI Providers', icon: SettingsIcon },
-    { id: 'ebay-config' as TabType, label: 'eBay Config', icon: Package },
-    { id: 'settings' as TabType, label: 'App Settings', icon: SettingsIcon },
-    { id: 'about' as TabType, label: 'About', icon: Info },
-  ];
+      setUser(null);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+      setCollectionImages([]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <ImageIcon className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-800">Image Pro</h1>
-            </div>
+    };
+
+  
+
+    const handleThemeChange = (theme: Theme) => {
+
+      themeManager.initializeTheme(theme);
+
+    };
+
+  
+
+    const handleReprocessItem = async (id: string) => {
+
+      const itemToReprocess = collectionImages.find(img => img.id === id);
+
+      if (itemToReprocess && user) {
+
+        // Remove from DB
+
+        await supabase.from('collection_images').delete().match({ user_id: user.id, image_id: id });
+
+        
+
+        setCollectionImages(prev => prev.filter(img => img.id !== id));
+
+        // Put it back in the processing queue
+
+        setProcessedImages(prev => [...prev, itemToReprocess]);
+
+        setActiveTab('processor');
+
+      }
+
+    };
+
+  
+
+    const handleReprocessAll = async () => {
+
+      if (user) {
+
+        // Remove all from DB
+
+        await supabase.from('collection_images').delete().eq('user_id', user.id);
+
+  
+
+        setProcessedImages(prev => [...prev, ...collectionImages]);
+
+        setCollectionImages([]);
+
+        setActiveTab('processor');
+
+      }
+
+    };
+
+  
+
+    const handleProcessingComplete = async (results: ProcessingResult[], images: ImageFile[]) => {
+
+      setProcessingResults(results);
+
+      setProcessedImages(images);
+
+  
+
+      // Add to local state for immediate feedback
+
+      setCollectionImages(prev => [...prev, ...images]);
+
+  
+
+      if (user) {
+
+        // Save to Supabase
+
+        const imagesToInsert = images.map(image => ({
+
+          user_id: user.id,
+
+          image_id: image.id,
+
+          image_file: image,
+
+        }));
+
+  
+
+        const { error } = await supabase.from('collection_images').insert(imagesToInsert);
+
+        if (error) {
+
+          console.error('Error saving collection images:', error);
+
+          // Optional: handle UI feedback for save failure
+
+        }
+
+      }
+
+    };
+
+  
+
+    const handleRemoveFromCollection = async (id: string) => {
+
+      if (user) {
+
+        // Remove from DB
+
+        await supabase.from('collection_images').delete().match({ user_id: user.id, image_id: id });
+
+        setCollectionImages(prev => prev.filter(img => img.id !== id));
+
+      }
+
+    };
+
+    const tabs = [
+
+      { id: 'processor' as TabType, label: 'Image Processor', icon: ImageIcon },
+
+      { id: 'collection' as TabType, label: 'My Collection', icon: FolderHeart },
+
+      { id: 'dashboard' as TabType, label: 'Market Insights', icon: TrendingUp },
+
+      { id: 'export' as TabType, label: 'Export & Share', icon: Share2 },
+
+      { id: 'ai-config' as TabType, label: 'AI Providers', icon: SettingsIcon },
+
+      { id: 'ebay-config' as TabType, label: 'eBay Config', icon: Package },
+
+      { id: 'settings' as TabType, label: 'App Settings', icon: SettingsIcon },
+
+      { id: 'about' as TabType, label: 'About', icon: Info },
+
+    ];
+
+  
+
+    if (loading) {
+
+      return (
+
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center">
+
+          <div className="text-center">
+
+            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+
+            <p className="text-gray-600">Loading...</p>
+
           </div>
-        </header>
-        <Auth />
-      </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <ImageIcon className="w-6 h-6 text-white" />
-              </div>
-              <div>
+        </div>
+
+      );
+
+    }
+
+    if (!user) {
+
+      return (
+
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
+
+          <header className="bg-white shadow-sm border-b border-gray-200">
+
+            <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+
+                  <ImageIcon className="w-6 h-6 text-white" />
+
+                </div>
+
                 <h1 className="text-2xl font-bold text-gray-800">Image Pro</h1>
-                <p className="text-sm text-gray-600">Professional Batch Image Processing</p>
+
               </div>
+
             </div>
 
-            <div className="flex items-center gap-4">
-              {settings.show_tips && activeTab === 'processor' && (
-                <div className="hidden lg:block bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-                  <p className="text-sm text-blue-800">
-                    <strong>Tip:</strong> Upload up to 10 images for batch processing
-                  </p>
-                </div>
-              )}
-              <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </button>
-            </div>
-          </div>
+          </header>
+
+          <Auth />
+
         </div>
 
-        <nav className="max-w-7xl mx-auto px-6">
-          <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative whitespace-nowrap ${activeTab === tab.id
-                    ? 'text-blue-600'
-                    : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {tab.label}
-                  {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-      </header>
+      );
 
-      <main className="py-8">
-        {activeTab === 'processor' && (
-          <BatchProcessor
-            settings={settings}
-            onProcessingComplete={(results, images) => {
-              setProcessingResults(results);
-              setProcessedImages(images);
-              // Prompt or auto-add to local collection state for this session
-              setCollectionImages(prev => [...prev, ...images]);
-            }}
-          />
-        )}
-        {activeTab === 'collection' && (
-          <CollectionView
-            images={collectionImages}
-            onRemove={(id: string) => {
-              setCollectionImages(prev => prev.filter(img => img.id !== id));
-            }}
-            onReprocess={handleReprocessItem}
-            onReprocessAll={handleReprocessAll}
-          />
-        )}
-        {activeTab === 'dashboard' && (
-          <div className="max-w-7xl mx-auto p-6">
-            <PriceDashboard />
-          </div>
-        )}
-        {activeTab === 'export' && (
-          <div className="max-w-7xl mx-auto p-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Export & Share</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-blue-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Export Processed Images</h3>
-                  <p className="text-gray-600 mb-4">Export your processed images in various formats including JSON, CSV, XLSX, PDF, and more.</p>
-                  <button
-                    onClick={() => setShowExportPanel(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Package className="w-5 h-5" />
-                    Open Export Panel
-                  </button>
+    }
+
+  
+
+    return (
+
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
+
+        <header className="bg-white shadow-sm border-b border-gray-200">
+
+          <div className="max-w-7xl mx-auto px-6 py-4">
+
+            <div className="flex items-center justify-between">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+
+                  <ImageIcon className="w-6 h-6 text-white" />
+
                 </div>
-                <div className="bg-green-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Direct Listing & Sharing</h3>
-                  <p className="text-gray-600 mb-4">List your items directly on eBay or share on social media platforms.</p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setActiveTab('ebay-config')}
-                      className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
-                    >
-                      <Upload className="w-5 h-5" />
-                      List on eBay
-                    </button>
-                    <button
-                      onClick={() => alert('Social sharing functionality coming soon!')}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Share2 className="w-5 h-5" />
-                      Share
-                    </button>
+
+                <div>
+
+                  <h1 className="text-2xl font-bold text-gray-800">Image Pro</h1>
+
+                  <p className="text-sm text-gray-600">Professional Batch Image Processing</p>
+
+                </div>
+
+              </div>
+
+  
+
+              <div className="flex items-center gap-4">
+
+                {settings.show_tips && activeTab === 'processor' && (
+
+                  <div className="hidden lg:block bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+
+                    <p className="text-sm text-blue-800">
+
+                      <strong>Tip:</strong> Upload up to 10 images for batch processing
+
+                    </p>
+
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {activeTab === 'ai-config' && (
-          <div className="max-w-4xl mx-auto p-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">AI Provider Configuration</h2>
-              <div className="bg-gray-50 p-6 rounded-lg mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Configure AI Services</h3>
-                <p className="text-gray-600 mb-4">
-                  Set up your API keys for various AI services including Google Gemini, OpenAI, Anthropic,
-                  eBay, and Facebook to enhance your image processing capabilities.
-                </p>
+
+                )}
+
+                <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
+
                 <button
-                  onClick={() => setShowAiProviderConfig(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+
+                  onClick={handleSignOut}
+
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+
                 >
-                  <SettingsIcon className="w-5 h-5" />
-                  Configure AI Providers
+
+                  <LogOut className="w-4 h-4" />
+
+                  Sign Out
+
                 </button>
+
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-800 mb-2">Google Gemini</h4>
-                  <p className="text-sm text-gray-600">Advanced image analysis and description</p>
-                </div>
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-800 mb-2">OpenAI</h4>
-                  <p className="text-sm text-gray-600">GPT-4 Vision for detailed analysis</p>
-                </div>
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-800 mb-2">Anthropic</h4>
-                  <p className="text-sm text-gray-600">Claude for nuanced descriptions</p>
-                </div>
-              </div>
             </div>
+
           </div>
-        )}
-        {activeTab === 'ebay-config' && (
-          <EbayConfig />
-        )}
-        {activeTab === 'settings' && (
-          <Settings settings={settings} onSettingsChange={setSettings} onThemeChange={(t) => handleThemeChange(t as Theme)} />
-        )}
-        {activeTab === 'about' && (
-          <div className="max-w-3xl mx-auto p-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">About Image Pro</h2>
 
-              <div className="space-y-4 text-gray-700">
-                <p>
-                  Image Pro is a powerful batch image processing platform that allows you to process
-                  up to 10 images simultaneously with advanced features.
-                </p>
+  
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Key Features</h3>
-                  <ul className="list-disc list-inside space-y-2">
-                    <li>Batch processing of up to 10 images</li>
-                    <li>Automatic image expansion before cropping</li>
-                    <li>Intelligent auto-enhancement with brightness, contrast, and saturation adjustments</li>
-                    <li>Interactive cropping with visual feedback</li>
-                    <li>Grid overlay for precise editing</li>
-                    <li>Customizable processing settings</li>
-                    <li>Bulk download of processed images</li>
-                    <li>AI-powered image analysis for collectibles</li>
-                    <li>Smart renaming based on AI analysis</li>
-                    <li>Metadata embedding with processing details</li>
-                    <li>Export to multiple formats (JSON, PDF, CSV, XLSX)</li>
-                    <li>Direct listing on eBay</li>
-                    <li>Social media sharing</li>
-                  </ul>
-                </div>
+          <nav className="max-w-7xl mx-auto px-6">
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">How It Works</h3>
-                  <ol className="list-decimal list-inside space-y-2">
-                    <li>Upload your images (supports common formats: JPG, PNG, etc.)</li>
-                    <li>Customize your processing settings in the Settings tab</li>
-                    <li>Click "Process All" to apply automatic enhancements</li>
-                    <li>Edit individual images with the crop tool</li>
-                    <li>AI analyzes your images and provides detailed descriptions</li>
-                    <li>Export processed images in various formats</li>
-                    <li>List directly on eBay or share on social media</li>
-                  </ol>
-                </div>
+            <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-blue-800 mb-2">Processing Pipeline</h3>
-                  <p className="text-blue-700">
-                    Images go through an intelligent processing pipeline: expansion (optional) →
-                    cropping (manual) → enhancement (automatic) → AI analysis → smart renaming →
-                    metadata embedding. All operations are applied client-side for maximum privacy and speed.
-                  </p>
-                </div>
+              {tabs.map(tab => {
 
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">
-                    Built with React, TypeScript, and Canvas API for high-performance image processing.
-                  </p>
-                </div>
-              </div>
+                const Icon = tab.icon;
+
+                return (
+
+                  <button
+
+                    key={tab.id}
+
+                    onClick={() => setActiveTab(tab.id)}
+
+                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative whitespace-nowrap ${activeTab === tab.id
+
+                      ? 'text-blue-600'
+
+                      : 'text-gray-600 hover:text-gray-800'
+
+                      }`}
+
+                  >
+
+                    <Icon className="w-5 h-5" />
+
+                    {tab.label}
+
+                    {activeTab === tab.id && (
+
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+
+                    )}
+
+                  </button>
+
+                );
+
+              })}
+
             </div>
+
+          </nav>
+
+        </header>
+
+  
+
+        <main className="py-8">
+
+          {activeTab === 'processor' && (
+
+            <BatchProcessor
+
+              settings={settings}
+
+              onProcessingComplete={handleProcessingComplete}
+
+            />
+
+          )}
+
+          {activeTab === 'collection' && (
+
+            <CollectionView
+
+              images={collectionImages}
+
+              onRemove={handleRemoveFromCollection}
+
+              onReprocess={handleReprocessItem}
+
+              onReprocessAll={handleReprocessAll}
+
+            />
+
+          )}
+
+          {activeTab === 'dashboard' && (
+
+            <div className="max-w-7xl mx-auto p-6">
+
+              <PriceDashboard />
+
+            </div>
+
+          )}
+
+          {activeTab === 'export' && (
+
+            <div className="max-w-7xl mx-auto p-6">
+
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">Export & Share</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                  <div className="bg-blue-50 p-6 rounded-lg">
+
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3">Export Processed Images</h3>
+
+                    <p className="text-gray-600 mb-4">Export your processed images in various formats including JSON, CSV, XLSX, PDF, and more.</p>
+
+                    <button
+
+                      onClick={() => setShowExportPanel(true)}
+
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+
+                    >
+
+                      <Package className="w-5 h-5" />
+
+                      Open Export Panel
+
+                    </button>
+
+                  </div>
+
+                  <div className="bg-green-50 p-6 rounded-lg">
+
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3">Direct Listing & Sharing</h3>
+
+                    <p className="text-gray-600 mb-4">List your items directly on eBay or share on social media platforms.</p>
+
+                    <div className="flex gap-3">
+
+                      <button
+
+                        onClick={() => setActiveTab('ebay-config')}
+
+                        className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+
+                      >
+
+                        <Upload className="w-5 h-5" />
+
+                        List on eBay
+
+                      </button>
+
+                      <button
+
+                        onClick={() => alert('Social sharing functionality coming soon!')}
+
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+
+                      >
+
+                        <Share2 className="w-5 h-5" />
+
+                        Share
+
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          )}
+
+          {activeTab === 'ai-config' && (
+
+            <div className="max-w-4xl mx-auto p-6">
+
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">AI Provider Configuration</h2>
+
+                <div className="bg-gray-50 p-6 rounded-lg mb-6">
+
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Configure AI Services</h3>
+
+                  <p className="text-gray-600 mb-4">
+
+                    Set up your API keys for various AI services including Google Gemini, OpenAI, Anthropic,
+
+                    eBay, and Facebook to enhance your image processing capabilities.
+
+                  </p>
+
+                  <button
+
+                    onClick={() => setShowAiProviderConfig(true)}
+
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+
+                  >
+
+                    <SettingsIcon className="w-5 h-5" />
+
+                    Configure AI Providers
+
+                  </button>
+
+                </div>
+
+  
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                  <div className="border border-gray-200 rounded-lg p-4">
+
+                    <h4 className="font-medium text-gray-800 mb-2">Google Gemini</h4>
+
+                    <p className="text-sm text-gray-600">Advanced image analysis and description</p>
+
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-4">
+
+                    <h4 className="font-medium text-gray-800 mb-2">OpenAI</h4>
+
+                    <p className="text-sm text-gray-600">GPT-4 Vision for detailed analysis</p>
+
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-4">
+
+                    <h4 className="font-medium text-gray-800 mb-2">Anthropic</h4>
+
+                    <p className="text-sm text-gray-600">Claude for nuanced descriptions</p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          )}
+
+          {activeTab === 'ebay-config' && (
+
+            <EbayConfig />
+
+          )}
+
+          {activeTab === 'settings' && (
+
+            <Settings settings={settings} onSettingsChange={setSettings} onThemeChange={(t) => handleThemeChange(t as Theme)} />
+
+          )}
+
+          {activeTab === 'about' && (
+
+            <div className="max-w-3xl mx-auto p-6">
+
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">About Image Pro</h2>
+
+  
+
+                <div className="space-y-4 text-gray-700">
+
+                  <p>
+
+                    Image Pro is a powerful batch image processing platform that allows you to process
+
+                    up to 10 images simultaneously with advanced features.
+
+                  </p>
+
+  
+
+                  <div>
+
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Key Features</h3>
+
+                    <ul className="list-disc list-inside space-y-2">
+
+                      <li>Batch processing of up to 10 images</li>
+
+                      <li>Automatic image expansion before cropping</li>
+
+                      <li>Intelligent auto-enhancement with brightness, contrast, and saturation adjustments</li>
+
+                      <li>Interactive cropping with visual feedback</li>
+
+                      <li>Grid overlay for precise editing</li>
+
+                      <li>Customizable processing settings</li>
+
+                      <li>Bulk download of processed images</li>
+
+                      <li>AI-powered image analysis for collectibles</li>
+
+                      <li>Smart renaming based on AI analysis</li>
+
+                      <li>Metadata embedding with processing details</li>
+
+                      <li>Export to multiple formats (JSON, PDF, CSV, XLSX)</li>
+
+                      <li>Direct listing on eBay</li>
+
+                      <li>Social media sharing</li>
+
+                    </ul>
+
+                  </div>
+
+  
+
+                  <div>
+
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">How It Works</h3>
+
+                    <ol className="list-decimal list-inside space-y-2">
+
+                      <li>Upload your images (supports common formats: JPG, PNG, etc.)</li>
+
+                      <li>Customize your processing settings in the Settings tab</li>
+
+                      <li>Click "Process All" to apply automatic enhancements</li>
+
+                      <li>Edit individual images with the crop tool</li>
+
+                      <li>AI analyzes your images and provides detailed descriptions</li>
+
+                      <li>Export processed images in various formats</li>
+
+                      <li>List directly on eBay or share on social media</li>
+
+                    </ol>
+
+                  </div>
+
+  
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+
+                    <h3 className="text-lg font-semibold text-blue-800 mb-2">Processing Pipeline</h3>
+
+                    <p className="text-blue-700">
+
+                      Images go through an intelligent processing pipeline: expansion (optional) →
+
+                      cropping (manual) → enhancement (automatic) → AI analysis → smart renaming →
+
+                      metadata embedding. All operations are applied client-side for maximum privacy and speed.
+
+                    </p>
+
+                  </div>
+
+  
+
+                  <div className="pt-4 border-t border-gray-200">
+
+                    <p className="text-sm text-gray-600">
+
+                      Built with React, TypeScript, and Canvas API for high-performance image processing.
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          )}
+
+        </main>
+
+  
+
+        <footer className="bg-white border-t border-gray-200 mt-12">
+
+          <div className="max-w-7xl mx-auto px-6 py-4">
+
+            <p className="text-center text-sm text-gray-600">
+
+              Image Pro - Professional Batch Image Processing
+
+            </p>
+
           </div>
+
+        </footer>
+
+  
+
+        {showExportPanel && (
+
+          <ExportPanel
+
+            results={processingResults}
+
+            images={processedImages}
+
+            onClose={() => setShowExportPanel(false)}
+
+          />
+
         )}
-      </main>
 
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <p className="text-center text-sm text-gray-600">
-            Image Pro - Professional Batch Image Processing
-          </p>
-        </div>
-      </footer>
+  
 
-      {showExportPanel && (
-        <ExportPanel
-          results={processingResults}
-          images={processedImages}
-          onClose={() => setShowExportPanel(false)}
-        />
-      )}
+        {showAiProviderConfig && (
 
-      {showAiProviderConfig && (
-        <AiProviderConfig onClose={() => setShowAiProviderConfig(false)} />
-      )}
-    </div>
-  );
-}
+          <AiProviderConfig onClose={() => setShowAiProviderConfig(false)} />
 
-export default App;
+        )}
+
+      </div>
+
+    );
+
+  }
+
+  
+
+  export default App;
+
+  
 
