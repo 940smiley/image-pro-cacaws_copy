@@ -18,7 +18,7 @@ async function analyzeIssue() {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
   const prompt = `
     You are an expert software engineer assistant.
@@ -42,7 +42,7 @@ async function analyzeIssue() {
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     console.log(text); // Output the suggestion to stdout so the workflow can capture it
   } catch (error) {
     console.error("Error generating content:", error);
