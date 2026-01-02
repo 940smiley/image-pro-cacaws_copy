@@ -9,7 +9,7 @@ import PriceDashboard from './components/PriceDashboard';
 import Auth from './components/Auth';
 import { supabase } from './lib/supabase';
 import { themeManager, Theme } from './lib/themeManager';
-import { UserSettings, ProcessingResult, ImageFile } from './types';
+import { UserSettings, ProcessingResult, ImageFile, CollectionImage } from './types';
 import CollectionView from './components/CollectionView';
 import { TrendingUp, FolderHeart } from 'lucide-react';
 
@@ -149,15 +149,23 @@ function App() {
 
   
 
-        if (collectionError) {
+                if (collectionError) {
 
-          console.error('Error loading collection images:', collectionError);
+  
 
-        } else {
+                  console.error('Error loading collection images:', collectionError);
 
-          setCollectionImages(collectionData.map((item: any) => item.image_file));
+  
 
-        }
+                } else {
+
+  
+
+                  setCollectionImages(collectionData.map((item: CollectionImage) => item.image_file));
+
+  
+
+                }
 
   
 
