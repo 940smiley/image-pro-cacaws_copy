@@ -245,7 +245,7 @@ export const exportToCsv = (results: ProcessingResult[]): string => {
  * @param images Array of image files
  * @returns XLSX file as Blob
  */
-export const exportToXlsx = async (results: ProcessingResult[], images: ImageFile[]): Promise<Blob> => {
+export const exportToXlsx = async (results: ProcessingResult[], _images: ImageFile[]): Promise<Blob> => {
   // Create a workbook
   const wb = utils.book_new();
   
@@ -265,7 +265,7 @@ export const exportToXlsx = async (results: ProcessingResult[], images: ImageFil
       result.analysis.colors.join('; '),
       result.analysis.collectibleDetails?.condition || 'N/A',
       result.analysis.estimatedValueRange ? `${result.analysis.estimatedValueRange.min}-${result.analysis.estimatedValueRange.max}` : 'N/A',
-      result.analysis.confidence
+      String(result.analysis.confidence)
     ]);
   });
   
@@ -298,13 +298,13 @@ export const exportToXlsx = async (results: ProcessingResult[], images: ImageFil
  * @param images Array of image files
  * @returns PDF as Blob
  */
-export const exportToPdf = async (results: ProcessingResult[], images: ImageFile[]): Promise<Blob> => {
+export const exportToPdf = async (results: ProcessingResult[], _images: ImageFile[]): Promise<Blob> => {
   const pdfDoc = await PDFDocument.create();
   
   for (const result of results) {
     // Add a new page for each result
     const page = pdfDoc.addPage([595, 842]); // A4 size in points
-    const { width, height } = page.getSize();
+    const { width: _width, height } = page.getSize();
     const fontSize = 12;
     
     // Add title
@@ -460,7 +460,7 @@ export const exportToPdf = async (results: ProcessingResult[], images: ImageFile
   
   // Serialize the PDF and return as blob
   const pdfBytes = await pdfDoc.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
+  return new Blob([pdfBytes as any], { type: 'application/pdf' });
 };
 
 /**
@@ -490,12 +490,14 @@ export const exportAll = async (results: ProcessingResult[], images: ImageFile[]
   
   // Add processed images
   const imagesFolder = zip.folder('processed_images');
-  for (const image of images) {
-    if (image.result) {
-      // Get the blob from the image URL
-      const response = await fetch(image.result);
-      const blob = await response.blob();
-      imagesFolder.file(image.file.name, blob);
+  if (imagesFolder) {
+    for (const image of images) {
+      if (image.result) {
+        // Get the blob from the image URL
+        const response = await fetch(image.result);
+        const blob = await response.blob();
+        imagesFolder.file(image.file.name, blob);
+      }
     }
   }
   

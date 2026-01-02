@@ -33,7 +33,7 @@ interface FacebookPage {
 export const createFacebookPost = async (
   pageId: string,
   postData: FacebookPostRequest,
-  accessToken: string
+  _accessToken: string
 ): Promise<FacebookPostResponse> => {
   // In a real implementation, we would use the Facebook Graph API to create a post
   // For this implementation, we'll simulate the API call

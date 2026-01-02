@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Settings as SettingsIcon, Info, Upload, Download, Share2, Package, LogOut } from 'lucide-react';
+import { Image as ImageIcon, Settings as SettingsIcon, Info, Upload, Share2, Package, LogOut } from 'lucide-react';
 import BatchProcessor from './components/BatchProcessor';
 import Settings from './components/Settings';
 import ExportPanel from './components/ExportPanel';

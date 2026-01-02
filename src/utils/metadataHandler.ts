@@ -1,56 +1,30 @@
 import { GeminiAnalysis, ProcessingOperation } from '../types';
 
 /**
- * Embeds metadata into an image blob
- * @param imageBlob The original image blob
- * @param analysis The Gemini analysis to embed
- * @param operations The processing operations applied
- * @returns A new blob with embedded metadata
- */
-export const embedMetadata = async (
-  imageBlob: Blob,
-  analysis: GeminiAnalysis,
-  operations: ProcessingOperation[],
-  filename: string
-): Promise<Blob> => {
-  // For browser-based metadata embedding, we'll create a data URL with the metadata
-  // In a real implementation, we'd use a library like exiftool-vendored
-  // For now, we'll create a composite object that includes the image and metadata
-  
-  // In a real implementation, we would:
-  // 1. Use exiftool or similar to embed metadata directly into the image file
-  // 2. Add custom XMP/IPTC/EXIF fields with our analysis data
-  
-  // For this implementation, we'll return the original blob since browser-based
-  // metadata embedding is complex and requires special handling
-  return imageBlob;
-};
-
-/**
- * Creates a metadata object from analysis and operations
- * @param analysis The Gemini analysis
- * @param operations The processing operations applied
- * @param filename The original filename
- * @returns A metadata object
+ * Creates a metadata object from AI analysis and processing operations
+ * @param analysis Gemini AI analysis results
+ * @param operations List of processing operations applied
+ * @param filename Original or new filename
+ * @returns Object containing formatted metadata
  */
 export const createMetadataObject = (
   analysis: GeminiAnalysis,
   operations: ProcessingOperation[],
   filename: string
 ): Record<string, any> => {
-  return {
-    // Standard metadata
+  const metadata: Record<string, any> = {
+    'Processing Timestamp': new Date().toISOString(),
     'Image Filename': filename,
-    'Processing Date': new Date().toISOString(),
+    'Software': 'Image Pro',
     'Analysis Confidence': analysis.confidence,
+    'Source AI': 'Google Gemini',
     
-    // Analysis results
     'Description': analysis.description,
     'Objects Identified': analysis.objects.join(', '),
     'Categories': analysis.categories.join(', '),
     'Colors': analysis.colors.join(', '),
     
-    // Collectible details if available
+    // Add collectible specific details if present
     ...(analysis.collectibleDetails && {
       'Collectible Type': analysis.collectibleDetails.type,
       'Era': analysis.collectibleDetails.era,
@@ -66,32 +40,31 @@ export const createMetadataObject = (
       'Special Features': analysis.collectibleDetails.specialFeatures?.join(', '),
     }),
     
-    // Condition and authenticity
+    // Condition assessment
     ...(analysis.conditionAssessment && { 'Condition Assessment': analysis.conditionAssessment }),
     ...(analysis.authenticityMarkers && { 'Authenticity Markers': analysis.authenticityMarkers.join(', ') }),
     
-    // Value estimation
+    // Estimated value range
     ...(analysis.estimatedValueRange && {
       'Estimated Value Min': analysis.estimatedValueRange.min,
       'Estimated Value Max': analysis.estimatedValueRange.max,
     }),
     
-    // Processing operations
+    // Record all operations applied to the image
     'Processing Operations': operations.map(op => `${op.type}: ${JSON.stringify(op.params)}`).join('; '),
-    
-    // Application-specific metadata
-    'Application': 'Image Pro',
-    'Version': '1.0.0',
   };
+
+  return metadata;
 };
 
 /**
- * Extracts embedded metadata from an image blob
- * @param imageBlob The image blob to extract metadata from
- * @returns The extracted metadata
+ * Extracts metadata from an image file (if any was embedded)
+ * @param _imageBlob The image blob to extract metadata from
+ * @returns Object containing metadata or null if none found
  */
-export const extractMetadata = async (imageBlob: Blob): Promise<Record<string, any> | null> => {
-  // In a real implementation, we would extract metadata using exiftool
-  // For now, we return null since we're not actually embedding metadata in the browser
+export const extractMetadata = async (_imageBlob: Blob): Promise<Record<string, any> | null> => {
+  // In a real implementation, we would use a library like exiftool-vendored (in Electron)
+  // or a client-side library to read EXIF/IPTC metadata.
+  // For this implementation, we'll return null as it's a complex client-side operation
   return null;
 };

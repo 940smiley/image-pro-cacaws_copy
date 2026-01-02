@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, FileText } from 'lucide-react';
+import { TrendingUp, DollarSign, Calendar, FileText } from 'lucide-react';
 
 interface PricePoint {
   date: string;

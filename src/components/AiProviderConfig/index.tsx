@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Save, X, Eye, EyeOff } from 'lucide-react';
+import { Save, X, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface AiProviderConfig {

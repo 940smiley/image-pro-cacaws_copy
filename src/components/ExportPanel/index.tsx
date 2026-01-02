@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Download, FileJson, FileSpreadsheet, FileText, Upload, Package, X } from 'lucide-react';
 import { ProcessingResult, ImageFile } from '../../types';
 import { exportToJson, exportToCsv, exportToXlsx, exportToPdf, exportAll } from '../../utils/exportUtils';

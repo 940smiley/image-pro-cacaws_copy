@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Image as ImageIcon, Trash2, Download, Play, AlertCircle, CheckCircle, Loader, Zap, ShoppingCart, Package, Share2, Upload as UploadIcon, Copy, LayoutGrid, FileOutput } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, Download, Play, AlertCircle, CheckCircle, Loader, Zap, Copy, LayoutGrid, FileOutput } from 'lucide-react';
 import { ImageFile, UserSettings, CropArea, ProcessingResult } from '../types';
 import { loadImageToCanvas, expandImage, cropImage, enhanceImage, downloadImage, rotateImage, autoDetectObjects } from '../utils/imageProcessing';
 import { analyzeImageWithGemini, searchEbayPricing } from '../utils/apiClient';
