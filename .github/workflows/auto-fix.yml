@@ -1,0 +1,45 @@
+# Code formatter workflow
+name: Format code and push
+
+on:
+  push:
+    branches: [ main, master, develop ]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run formatters
+        run: |
+          # Run multiple formatters
+          npx prettier --write . || echo "Prettier completed with errors"
+          npx eslint --fix . || echo "ESLint completed with errors"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --exit-code
+          if [ $? -ne 0 ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Commit and push changes
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Auto-fix: Format code [skip ci]" -m "Auto-generated commit by GitHub Actions" || echo "No changes to commit"
+          git push

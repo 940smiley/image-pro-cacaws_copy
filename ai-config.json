@@ -1,0 +1,54 @@
+{
+  "aiProviders": {
+    "gemini": {
+      "apiKeyEnvVar": "GEMINI_API_KEY",
+      "model": "gemini-2.5-flash",
+      "apiEndpoint": "https://generativelanguage.googleapis.com/v1beta/models/",
+      "defaultConfig": {
+        "temperature": 0.2,
+        "maxOutputTokens": 2048
+      }
+    },
+    "ollama": {
+      "apiEndpoint": "http://localhost:11434/api/generate",
+      "defaultModel": "llava:13b",
+      "defaultConfig": {
+        "temperature": 0.2,
+        "num_predict": 2000
+      }
+    }
+  },
+  "analysisSettings": {
+    "imageAnalysis": {
+      "enabled": true,
+      "objectDetection": true,
+      "classification": true,
+      "accuracyTarget": 0.85
+    },
+    "collectibleValuation": {
+      "enabled": true,
+      "categories": [
+        "stamps",
+        "trading-cards", 
+        "postcards",
+        "war-letters",
+        "coins",
+        "books",
+        "memorabilia"
+      ],
+      "dataSources": ["ebay", "colnect", "hipstamp", "delcampe"]
+    },
+    "enhancementRecommendations": {
+      "enabled": true,
+      "types": ["brightness", "contrast", "saturation", "resolution"]
+    }
+  },
+  "workflowIntegrations": {
+    "githubActions": {
+      "autoFixEnabled": true,
+      "automergeEnabled": true,
+      "aiAnalysisEnabled": true,
+      "issueLabeling": true
+    }
+  }
+}
