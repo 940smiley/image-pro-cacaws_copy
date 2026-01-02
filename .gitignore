@@ -23,3 +23,7 @@ dist-ssr
 .env
 qwen-lost-changes.txt
 /Stamp_resource_files
+google-ai-gemini-api-key.txt
+ebay-developer-api.txt
+GITHUB-TOKEN.txt
+supabase-api-jwt-etc.txt

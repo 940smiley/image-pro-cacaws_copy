@@ -1,10 +1,11 @@
 {
   "name": "image-pro",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Image Pro - Advanced image processing and analysis application",
   "author": "940smiley",
   "type": "module",
+  "main": "dist_electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,9 +13,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "setup": "bash scripts/setup-dev-environment.sh",
-    "setup:win": "scripts\\setup-dev-environment.bat",
+    "setup:win": "scripts/setup-dev-environment.bat",
     "build:all": "bash scripts/build-and-release.sh",
-    "build:all:win": "scripts\\build-and-release.bat",
+    "build:all:win": "scripts/build-and-release.bat",
     "test": "npm run typecheck && npm run lint",
     "release": "bash scripts/build-and-release.sh",
     "electron:dev": "tsc electron/main.ts --outDir dist_electron && tsc electron/preload.ts --outDir dist_electron && electron dist_electron/main.js",
@@ -34,13 +35,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
-    "@types/electron": "^1.6.10",
+    "@types/node": "^22.10.2",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "@types/node": "^22.10.2",
-    "electron": "^32.2.6",
-    "electron-builder": "^26.0.12",
     "autoprefixer": "^10.4.18",
     "electron": "^33.0.0",
     "electron-builder": "^25.1.8",
@@ -51,11 +49,8 @@
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
-    "vite": "^5.4.2",
-    "electron": "^32.2.6",
-    "electron-builder": "^26.0.12"
+    "vite": "^5.4.2"
   },
-  "main": "dist_electron/main.js",
   "build": {
     "appId": "com.940smiley.imagepro",
     "productName": "Image Pro",
@@ -69,6 +64,5 @@
     "extraResources": [
       "public/**/*"
     ]
-  }
   }
 }
