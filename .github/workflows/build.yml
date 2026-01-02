@@ -81,7 +81,44 @@ jobs:
         VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
     - name: Upload desktop artifacts
-...
+      uses: actions/upload-artifact@v4
+      with:
+        name: desktop-build-${{ matrix.os }}
+        path: src-tauri/target/release/bundle/*
+
+  build-electron:
+    needs: build-web
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build Electron application
+      run: npm run build && npm run electron:build && npx electron-builder --publish=never
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+    - name: Upload Electron artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: electron-build-${{ matrix.os }}
+        path: dist_electron/*
+
   deploy:
     needs: [build-web]
     runs-on: ubuntu-latest
