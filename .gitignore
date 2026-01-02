@@ -27,3 +27,5 @@ google-ai-gemini-api-key.txt
 ebay-developer-api.txt
 GITHUB-TOKEN.txt
 supabase-api-jwt-etc.txt
+.agent/workflows/*
+.agent/rules/*
