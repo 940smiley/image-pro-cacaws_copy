@@ -1,7 +1,7 @@
 name: Build and Release
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -10,11 +10,6 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
 
 jobs:
   build-web:
@@ -81,50 +76,12 @@ jobs:
         npm run build
         cd src-tauri
         cargo tauri build
+      env:
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
     - name: Upload desktop artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: desktop-build-${{ matrix.os }}
-        path: src-tauri/target/release/bundle/*
-
-  build-electron:
-    needs: build-web
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Compile Electron files
-      run: npm run electron:build
-
-    - name: Build Electron application
-      run: npm run electron:build
-      env:
-    - name: Build Electron application
-      run: npm run build && npx electron-builder --publish=never
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload Electron artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: electron-build-${{ matrix.os }}
-        path: dist_electron/*
-
+...
   deploy:
     needs: [build-web]
     runs-on: ubuntu-latest
@@ -134,18 +91,20 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-    - uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Download web build artifacts
       uses: actions/download-artifact@v4
       with:
         name: web-build
-        path: ./web-build
+        path: ./dist
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: './dist'
 
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./web-build
+      id: deployment
+      uses: actions/deploy-pages@v4
