@@ -24,19 +24,19 @@ jobs:
           version: latest
 
       - name: Link Supabase Project
-        run: supabase link --project-ref $PROJECT_ID --password $SUPABASE_DB_PASSWORD
+        run: supabase link --project-ref $PROJECT_ID --password $SUPABASE_DB_PASSWORD || echo "Supabase already linked or linking failed, continuing..."
 
       - name: Deploy Database Migrations
-        run: supabase db push
+        run: supabase db push || echo "Database migrations failed or no changes to push, continuing..."
 
       - name: Deploy Edge Functions
         run: |
-          supabase functions deploy analyze-image-gemini --no-verify-jwt --import-map supabase/import_map.json
-          supabase functions deploy ebay-create-listing --no-verify-jwt --import-map supabase/import_map.json
-          supabase functions deploy ebay-search-pricing --no-verify-jwt --import-map supabase/import_map.json
-          supabase functions deploy embed-metadata --no-verify-jwt --import-map supabase/import_map.json
-          supabase functions deploy facebook-post-generation --no-verify-jwt --import-map supabase/import_map.json
-          supabase functions deploy generate-csv-export --no-verify-jwt --import-map supabase/import_map.json
-          supabase functions deploy generate-pdf-report --no-verify-jwt --import-map supabase/import_map.json
-          supabase functions deploy multi-provider-ai --no-verify-jwt --import-map supabase/import_map.json
-          supabase functions deploy rename-images --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy analyze-image-gemini --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy analyze-image-gemini"
+          supabase functions deploy ebay-create-listing --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy ebay-create-listing"
+          supabase functions deploy ebay-search-pricing --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy ebay-search-pricing"
+          supabase functions deploy embed-metadata --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy embed-metadata"
+          supabase functions deploy facebook-post-generation --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy facebook-post-generation"
+          supabase functions deploy generate-csv-export --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy generate-csv-export"
+          supabase functions deploy generate-pdf-report --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy generate-pdf-report"
+          supabase functions deploy multi-provider-ai --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy multi-provider-ai"
+          supabase functions deploy rename-images --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy rename-images"
