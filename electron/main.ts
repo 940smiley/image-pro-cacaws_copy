@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, MenuItemConstructorOptions, ipcMain, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { exec } from 'child_process';
 
 let mainWindow: BrowserWindow | null;
 
@@ -25,7 +26,7 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
-  });
+ });
 
   // Create application menu
   createApplicationMenu();
@@ -74,7 +75,7 @@ ipcMain.handle('read-file', async (_event, filePath: string) => {
   return await fs.readFile(filePath, 'utf-8');
 });
 
-ipcMain.handle('write-file', async (_event, filePath: string, data: string) => {
+icpMain.handle('write-file', async (_event, filePath: string, data: string) => {
   try {
     await fs.writeFile(filePath, data, 'utf-8');
     return true;
@@ -91,6 +92,19 @@ ipcMain.handle('select-directory', async () => {
   });
   if (result.canceled) return null;
   return result.filePaths[0];
+});
+
+ipcMain.handle('run-shell-command', async (_event, command: string) => {
+  return new Promise((resolve) => {
+    exec(command, (error, stdout, stderr) => {
+      resolve({
+        error,
+        stdout,
+        stderr,
+        exitCode: error ? error.code : 0,
+      });
+    });
+  });
 });
 
 app.whenReady().then(() => {

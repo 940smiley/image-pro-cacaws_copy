@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Download, X, ZoomIn, ZoomOut, Wand2, Hash, RotateCcw, RotateCw } from 'lucide-react';
 import { CropArea } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface ImageEditorProps {
   image: string;
@@ -21,6 +22,11 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
   const [rotation, setRotation] = useState(0);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, area: { ...cropArea } });
   const [perfCount, setPerfCount] = useState<{ horizontal: number, vertical: number } | null>(null);
+  const [perfCountLoading, setPerfCountLoading] = useState(false);
+  const [perfCountError, setPerfCountError] = useState<string | null>(null);
+  const [magicCropLoading, setMagicCropLoading] = useState(false);
+  const [magicCropError, setMagicCropError] = useState<string | null>(null);
+
 
   const imageRef = useRef<HTMLImageElement | null>(null);
 
@@ -218,15 +224,69 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
   };
 
   const handleMagicCrop = async () => {
-    // Placeholder for actual edge detection logic
-    alert("Magic Crop: Detecting edges... (Implementation in progress)");
+    setMagicCropLoading(true);
+    setMagicCropError(null);
+    try {
+      const imageBase64 = image.split(',')[1];
+      const mimeType = image.split(',')[0].split(':')[1].split(';')[0];
+
+      const { data: analysis, error } = await supabase.functions.invoke('analyze-image-gemini', {
+        body: {
+          imageBase64,
+          mimeType,
+          collectibleType: 'other', // Or derive this from context
+        },
+      });
+
+      if (error) throw error;
+
+      if (analysis.boundingBox) {
+        const [x1, y1, x2, y2] = analysis.boundingBox;
+        const img = imageRef.current;
+        if (img) {
+          const { width: naturalWidth, height: naturalHeight } = img;
+          const { width: displayWidth, height: displayHeight } = imageSize;
+
+          const scaleX = displayWidth / naturalWidth;
+          const scaleY = displayHeight / naturalHeight;
+
+          setCropArea({
+            x: x1 * scaleX,
+            y: y1 * scaleY,
+            width: (x2 - x1) * scaleX,
+            height: (y2 - y1) * scaleY,
+          });
+        }
+      } else {
+        throw new Error('Magic Crop could not find an object to crop.');
+      }
+    } catch (e: any) {
+      setMagicCropError(e.message);
+      setTimeout(() => setMagicCropError(null), 5000);
+    } finally {
+      setMagicCropLoading(false);
+    }
   };
 
-  const handlePerfCount = () => {
-    // Basic heuristic: irregularities along the crop edge
-    const hPerf = Math.floor(10 + Math.random() * 5);
-    const vPerf = Math.floor(12 + Math.random() * 4);
-    setPerfCount({ horizontal: hPerf, vertical: vPerf });
+  const handlePerfCount = async () => {
+    setPerfCountLoading(true);
+    setPerfCountError(null);
+    try {
+      const imageBase64 = image.split(',')[1];
+      const { data, error } = await supabase.functions.invoke('calculate-perf-count', {
+        body: { imageBase64 },
+      });
+
+      if (error) throw error;
+
+      setPerfCount(data);
+
+    } catch (e: any) {
+      setPerfCountError(e.message);
+      setTimeout(() => setPerfCountError(null), 5000);
+    } finally {
+      setPerfCountLoading(false);
+    }
   };
 
   const handleApply = () => {
@@ -287,6 +347,22 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
                 </div>
               </div>
             )}
+            
+            {magicCropError && (
+              <div className="absolute -bottom-12 left-0 right-0 flex justify-center">
+                <div className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                  {magicCropError}
+                </div>
+              </div>
+            )}
+
+            {perfCountError && (
+              <div className="absolute -bottom-16 left-0 right-0 flex justify-center">
+                <div className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                  {perfCountError}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 flex items-center gap-4 bg-white p-2 rounded-full shadow-sm border">
@@ -314,15 +390,17 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
             <div className="flex gap-2">
               <button
                 onClick={handleMagicCrop}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-bold"
+                disabled={magicCropLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-bold disabled:bg-gray-500"
               >
-                <Wand2 className="w-4 h-4" /> Magic Crop
+                {magicCropLoading ? 'Analyzing...' : <><Wand2 className="w-4 h-4" /> Magic Crop</>}
               </button>
               <button
                 onClick={handlePerfCount}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-bold"
+                disabled={perfCountLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-bold disabled:bg-gray-500"
               >
-                <Hash className="w-4 h-4" /> Perf Count
+                {perfCountLoading ? 'Counting...' : <><Hash className="w-4 h-4" /> Perf Count</>}
               </button>
             </div>
           </div>

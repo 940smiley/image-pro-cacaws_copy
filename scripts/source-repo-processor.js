@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch'; // This would need to be installed in the Action runner
+import sharp from 'sharp';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -42,11 +43,36 @@ async function processImages() {
         continue;
       }
 
-      // 2. Call Supabase AI Function
-      const imageBuffer = fs.readFileSync(filePath);
-      const base64Image = imageBuffer.toString('base64');
+      // 2. Auto-rotate image
+      let imageBuffer = fs.readFileSync(filePath);
+      let base64Image = imageBuffer.toString('base64');
+      const mimeType = `image/${path.extname(file).slice(1).replace('jpg', 'jpeg')}`;
 
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/analyze-image-gemini`, {
+      const orientationResponse = await fetch(`${SUPABASE_URL}/functions/v1/detect-image-orientation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        },
+        body: JSON.stringify({ imageBase64, mimeType })
+      });
+
+      if (orientationResponse.ok) {
+        const { rotation } = await orientationResponse.json();
+        if (rotation && rotation > 0) {
+          console.log(`Rotating ${file} by ${rotation} degrees...`);
+          const rotatedImageBuffer = await sharp(imageBuffer).rotate(rotation).toBuffer();
+          fs.writeFileSync(filePath, rotatedImageBuffer);
+          // Update buffer and base64 string for subsequent analysis
+          imageBuffer = rotatedImageBuffer;
+          base64Image = imageBuffer.toString('base64');
+        }
+      } else {
+        console.warn(`Could not determine orientation for ${file}. Proceeding without rotation.`);
+      }
+
+      // 3. Call Supabase AI Function for analysis
+      const analysisResponse = await fetch(`${SUPABASE_URL}/functions/v1/analyze-image-gemini`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,22 +80,22 @@ async function processImages() {
         },
         body: JSON.stringify({
           imageBase64: base64Image,
-          mimeType: `image/${path.extname(file).slice(1).replace('jpg', 'jpeg')}`
+          mimeType: mimeType
         })
       });
 
-      if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+      if (!analysisResponse.ok) throw new Error(`API Error: ${analysisResponse.statusText}`);
 
-      const analysis = await response.json();
+      const analysis = await analysisResponse.json();
 
-      // 3. Track in History
+      // 4. Track in History
       history.push({
         filename: file,
         timestamp: new Date().toISOString(),
         analysis
       });
 
-      // 4. Determine Directory based on AI result
+      // 5. Determine Directory based on AI result
       const type = analysis.collectibleDetails?.type || analysis.objects?.[0] || 'general';
       const safeType = type.toLowerCase().replace(/[^a-z0-9]/g, '_');
       const targetDir = path.join(processedDir, safeType);
@@ -78,7 +104,7 @@ async function processImages() {
         fs.mkdirSync(targetDir, { recursive: true });
       }
 
-      // 5. Move and Rename
+      // 6. Move and Rename
       const extension = path.extname(file);
       const newName = analysis.objects?.[0]
         ? `${analysis.objects[0].toLowerCase().replace(/\s+/g, '_')}_${Date.now()}${extension}`
@@ -99,7 +125,7 @@ async function processImages() {
   // Write history back
   fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
 
-  // 6. Check for Export Threshold
+  // 7. Check for Export Threshold
   if (history.length >= SCAN_THRESHOLD) {
     console.log(`Threshold reached (${history.length}/${SCAN_THRESHOLD}). Triggering exports...`);
     await triggerExports(history);

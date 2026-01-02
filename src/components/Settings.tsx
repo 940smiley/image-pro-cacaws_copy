@@ -11,6 +11,7 @@ interface SettingsProps {
 }
 
 import { Theme } from '../lib/themeManager';
+import SourceRepoManager from './SourceRepoManager';
 
 const defaultSettings: Omit<UserSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
   auto_enhance: true,
@@ -189,6 +190,11 @@ export default function Settings({ settings, onSettingsChange, onThemeChange }: 
               </label>
             </div>
           </div>
+        </div>
+
+        <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Source Control</h3>
+            <SourceRepoManager />
         </div>
 
         <div className="border-t pt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">

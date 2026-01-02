@@ -33,6 +33,7 @@ interface GeminiAnalysis {
   conditionAssessment?: string;
   authenticityMarkers?: string[];
   estimatedValueRange?: { min: number; max: number };
+  boundingBox?: [number, number, number, number];
 }
 
 const COLLECTIBLE_PROMPTS: Record<string, string> = {
@@ -47,8 +48,9 @@ const COLLECTIBLE_PROMPTS: Record<string, string> = {
     8. Authentication markers to look for
     9. Any special features (watermarks, perforations, etc.)
     10. Historical significance if applicable
+    11. Bounding box of the stamp as [x1, y1, x2, y2] coordinates.
 
-    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number), collectibleDetails (object with type, era, country, year, denomination, condition, rarity, estimatedValue, authentication, specialFeatures), conditionAssessment, authenticityMarkers (array), estimatedValueRange (object with min and max values).`,
+    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number), collectibleDetails (object with type, era, country, year, denomination, condition, rarity, estimatedValue, authentication, specialFeatures), conditionAssessment, authenticityMarkers (array), estimatedValueRange (object with min and max values), boundingBox (array).`,
 
   'trading-card': `Analyze this trading card in detail and provide:
     1. Sport and league
@@ -61,8 +63,9 @@ const COLLECTIBLE_PROMPTS: Record<string, string> = {
     8. Estimated market value range ($)
     9. Authentication markers to verify genuineness
     10. Rarity classification
+    11. Bounding box of the card as [x1, y1, x2, y2] coordinates.
 
-    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number), collectibleDetails (object with type, era, year, condition, rarity, estimatedValue, authentication, grading), conditionAssessment, authenticityMarkers (array), estimatedValueRange (object with min and max values).`,
+    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number), collectibleDetails (object with type, era, year, condition, rarity, estimatedValue, authentication, grading), conditionAssessment, authenticityMarkers (array), estimatedValueRange (object with min and max values), boundingBox (array).`,
 
   'postcard': `Analyze this postcard in detail and provide:
     1. Era of production (vintage period)
@@ -75,8 +78,9 @@ const COLLECTIBLE_PROMPTS: Record<string, string> = {
     8. Authentication markers for vintage authenticity
     9. Rarity assessment
     10. Any special historical context
+    11. Bounding box of the postcard as [x1, y1, x2, y2] coordinates.
 
-    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number), collectibleDetails (object with type, era, country, year, condition, rarity, estimatedValue, authentication, historicalSignificance), conditionAssessment, authenticityMarkers (array), estimatedValueRange (object with min and max values).`,
+    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number), collectibleDetails (object with type, era, country, year, condition, rarity, estimatedValue, authentication, historicalSignificance), conditionAssessment, authenticityMarkers (array), estimatedValueRange (object with min and max values), boundingBox (array).`,
 
   'war-letter': `Analyze this wartime correspondence in detail and provide:
     1. Approximate date and war/conflict period
@@ -89,8 +93,9 @@ const COLLECTIBLE_PROMPTS: Record<string, string> = {
     8. Provenance indicators if present
     9. Rarity assessment
     10. Any censored or redacted content
+    11. Bounding box of the letter as [x1, y1, x2, y2] coordinates.
 
-    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number), collectibleDetails (object with type, era, year, condition, estimatedValue, authentication, historicalSignificance), conditionAssessment, authenticityMarkers (array), estimatedValueRange (object with min and max values).`,
+    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number), collectibleDetails (object with type, era, year, condition, estimatedValue, authentication, historicalSignificance), conditionAssessment, authenticityMarkers (array), estimatedValueRange (object with min and max values), boundingBox (array).`,
 
   'other': `Analyze this image and provide:
     1. A detailed description (1-2 sentences)
@@ -98,8 +103,9 @@ const COLLECTIBLE_PROMPTS: Record<string, string> = {
     3. Categories the image belongs to
     4. Dominant colors
     5. Confidence level (0-100)
+    6. Bounding box of the main object as [x1, y1, x2, y2] coordinates.
 
-    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number).`
+    Format your response as JSON with these keys: description, objects (array), categories (array), colors (array), confidence (number), boundingBox (array).`
 };
 
 const corsHeaders = {
@@ -169,7 +175,7 @@ Deno.serve(async (req: Request) => {
     };
 
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,6 +203,7 @@ Deno.serve(async (req: Request) => {
       categories: [],
       colors: [],
       confidence: 0,
+      boundingBox: [0, 0, 0, 0],
     };
 
     if (

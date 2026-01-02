@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Settings as SettingsIcon, Info, Upload, Share2, Package, LogOut } from 'lucide-react';
+import { Image as ImageIcon, Settings as SettingsIcon, Info, Upload, Share2, Package, LogOut, GitMerge } from 'lucide-react';
 import BatchProcessor from './components/BatchProcessor';
 import Settings from './components/Settings';
 import ExportPanel from './components/ExportPanel';
 import AiProviderConfig from './components/AiProviderConfig';
 import EbayConfig from './components/EbayConfig';
 import PriceDashboard from './components/PriceDashboard';
+import SourceRepoManager from './components/SourceRepoManager';
 import Auth from './components/Auth';
 import { supabase } from './lib/supabase';
 import { themeManager, Theme } from './lib/themeManager';
@@ -13,7 +14,7 @@ import { UserSettings, ProcessingResult, ImageFile, CollectionImage } from './ty
 import CollectionView from './components/CollectionView';
 import { TrendingUp, FolderHeart } from 'lucide-react';
 
-type TabType = 'processor' | 'collection' | 'settings' | 'about' | 'export' | 'ai-config' | 'ebay-config' | 'dashboard';
+type TabType = 'processor' | 'collection' | 'settings' | 'about' | 'export' | 'ai-config' | 'ebay-config' | 'dashboard' | 'source-repo';
 
 const defaultSettings: UserSettings = {
   id: '',
@@ -39,7 +40,7 @@ function App() {
   const [processedImages, setProcessedImages] = useState<ImageFile[]>([]);
   const [collectionImages, setCollectionImages] = useState<ImageFile[]>([]);
 
-  
+
 
     useEffect(() => {
 
@@ -57,7 +58,7 @@ function App() {
 
       });
 
-  
+
 
       // Listen for auth changes
 
@@ -79,13 +80,13 @@ function App() {
 
       });
 
-  
+
 
       return () => subscription.unsubscribe();
 
     }, []);
 
-  
+
 
     const loadUserData = async (userId: string) => {
 
@@ -97,7 +98,7 @@ function App() {
 
         themeManager.applyTheme(savedTheme);
 
-  
+
 
         // Load user settings
 
@@ -111,7 +112,7 @@ function App() {
 
           .maybeSingle();
 
-  
+
 
         if (settingsData) {
 
@@ -135,7 +136,7 @@ function App() {
 
         }
 
-  
+
 
         // Load collection images
 
@@ -147,27 +148,27 @@ function App() {
 
           .eq('user_id', userId);
 
-  
+
 
                 if (collectionError) {
 
-  
+
 
                   console.error('Error loading collection images:', collectionError);
 
-  
+
 
                 } else {
 
-  
+
 
                   setCollectionImages(collectionData.map((item: CollectionImage) => item.image_file));
 
-  
+
 
                 }
 
-  
+
 
       } catch (error) {
 
@@ -181,7 +182,7 @@ function App() {
 
     };
 
-  
+
 
     const handleSignOut = async () => {
 
@@ -193,7 +194,7 @@ function App() {
 
     };
 
-  
+
 
     const handleThemeChange = (theme: Theme) => {
 
@@ -201,7 +202,7 @@ function App() {
 
     };
 
-  
+
 
     const handleReprocessItem = async (id: string) => {
 
@@ -227,7 +228,7 @@ function App() {
 
     };
 
-  
+
 
     const handleReprocessAll = async () => {
 
@@ -237,7 +238,7 @@ function App() {
 
         await supabase.from('collection_images').delete().eq('user_id', user.id);
 
-  
+
 
         setProcessedImages(prev => [...prev, ...collectionImages]);
 
@@ -249,7 +250,7 @@ function App() {
 
     };
 
-  
+
 
     const handleProcessingComplete = async (results: ProcessingResult[], images: ImageFile[]) => {
 
@@ -257,13 +258,13 @@ function App() {
 
       setProcessedImages(images);
 
-  
+
 
       // Add to local state for immediate feedback
 
       setCollectionImages(prev => [...prev, ...images]);
 
-  
+
 
       if (user) {
 
@@ -279,7 +280,7 @@ function App() {
 
         }));
 
-  
+
 
         const { error } = await supabase.from('collection_images').insert(imagesToInsert);
 
@@ -295,7 +296,7 @@ function App() {
 
     };
 
-  
+
 
     const handleRemoveFromCollection = async (id: string) => {
 
@@ -312,26 +313,18 @@ function App() {
     };
 
     const tabs = [
-
       { id: 'processor' as TabType, label: 'Image Processor', icon: ImageIcon },
-
       { id: 'collection' as TabType, label: 'My Collection', icon: FolderHeart },
-
       { id: 'dashboard' as TabType, label: 'Market Insights', icon: TrendingUp },
-
+      { id: 'source-repo' as TabType, label: 'Source Repo', icon: GitMerge },
       { id: 'export' as TabType, label: 'Export & Share', icon: Share2 },
-
       { id: 'ai-config' as TabType, label: 'AI Providers', icon: SettingsIcon },
-
       { id: 'ebay-config' as TabType, label: 'eBay Config', icon: Package },
-
       { id: 'settings' as TabType, label: 'App Settings', icon: SettingsIcon },
-
       { id: 'about' as TabType, label: 'About', icon: Info },
-
     ];
 
-  
+
 
     if (loading) {
 
@@ -387,7 +380,7 @@ function App() {
 
     }
 
-  
+
 
     return (
 
@@ -417,7 +410,7 @@ function App() {
 
               </div>
 
-  
+
 
               <div className="flex items-center gap-4">
 
@@ -457,7 +450,7 @@ function App() {
 
           </div>
 
-  
+
 
           <nav className="max-w-7xl mx-auto px-6">
 
@@ -507,7 +500,7 @@ function App() {
 
         </header>
 
-  
+
 
         <main className="py-8">
 
@@ -547,6 +540,11 @@ function App() {
 
             </div>
 
+          )}
+          {activeTab === 'source-repo' && (
+            <div className="max-w-7xl mx-auto p-6">
+              <SourceRepoManager />
+            </div>
           )}
 
           {activeTab === 'export' && (
@@ -665,7 +663,7 @@ function App() {
 
                 </div>
 
-  
+
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
@@ -721,7 +719,7 @@ function App() {
 
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">About Image Pro</h2>
 
-  
+
 
                 <div className="space-y-4 text-gray-700">
 
@@ -733,7 +731,7 @@ function App() {
 
                   </p>
 
-  
+
 
                   <div>
 
@@ -771,7 +769,7 @@ function App() {
 
                   </div>
 
-  
+
 
                   <div>
 
@@ -797,7 +795,7 @@ function App() {
 
                   </div>
 
-  
+
 
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
 
@@ -815,7 +813,7 @@ function App() {
 
                   </div>
 
-  
+
 
                   <div className="pt-4 border-t border-gray-200">
 
@@ -837,7 +835,7 @@ function App() {
 
         </main>
 
-  
+
 
         <footer className="bg-white border-t border-gray-200 mt-12">
 
@@ -853,7 +851,7 @@ function App() {
 
         </footer>
 
-  
+
 
         {showExportPanel && (
 
@@ -869,7 +867,7 @@ function App() {
 
         )}
 
-  
+
 
         {showAiProviderConfig && (
 
@@ -883,9 +881,7 @@ function App() {
 
   }
 
-  
+
 
   export default App;
-
-  
 

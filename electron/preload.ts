@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (path: string) => ipcRenderer.invoke('read-file', path),
   writeFile: (path: string, data: string) => ipcRenderer.invoke('write-file', path, data),
   selectDirectory: () => ipcRenderer.invoke('select-directory'),
+  runShellCommand: (command: string) => ipcRenderer.invoke('run-shell-command', command),
 
   // System information
   getPlatform: () => process.platform,
