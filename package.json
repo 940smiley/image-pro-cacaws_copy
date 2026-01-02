@@ -21,7 +21,8 @@
     "electron:dev": "tsc -p tsconfig.electron.json && electron dist_electron/main.js",
     "electron:build": "tsc -p tsconfig.electron.json",
     "build:electron": "npm run build && npm run electron:build && electron-builder",
-    "dist": "npm run build && npm run electron:build && electron-builder --publish=never"
+    "dist": "npm run build && npm run electron:build && electron-builder --publish=never",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
@@ -51,6 +52,7 @@
     "tailwindcss": "^4.1.18",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.51.0",
+    "@tauri-apps/cli": "^1.6.0",
     "vite": "^7.3.0"
   },
   "build": {
