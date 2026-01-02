@@ -268,6 +268,14 @@ export default function AiProviderConfig({ onClose }: AiProviderConfigProps) {
                 {saving ? 'Saving...' : 'Add Provider'}
               </button>
             </div>
+            <div className="mt-6 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-lg">
+              <p className="font-medium">Important for AI Analysis:</p>
+              <p className="text-sm">
+                For Google Gemini analysis to function, you *must* add your `GEMINI_API_KEY` as an environment variable
+                in your Supabase project's Edge Functions settings for the `analyze-image-gemini` function.
+                Storing it here does not automatically configure the Supabase function.
+              </p>
+            </div>
           </div>
 
           {/* Existing Providers List */}
