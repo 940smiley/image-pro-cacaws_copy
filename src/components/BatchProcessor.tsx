@@ -30,6 +30,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedAnalysis, setSelectedAnalysis] = useState<ImageFile | null>(null);
   const [editingImage, setEditingImage] = useState<ImageFile | null>(null);
+  const [focusedImageId, setFocusedImageId] = useState<string | null>(null);
   const [collectibleType, setCollectibleType] = useState<'stamp' | 'trading-card' | 'postcard' | 'war-letter' | 'other'>('other');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -132,8 +133,13 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
 
     setProcessing(true);
     setAnalyzing(true);
+    // Start focusing on the first pending image
+    setFocusedImageId(pending[0].id);
 
     const processAndAnalyze = async (image: ImageFile) => {
+      // Set focus to current image
+      setFocusedImageId(image.id);
+
       try {
         let currentImg = { ...image };
 
@@ -177,11 +183,17 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
     const CHUNK = 2;
     for (let i = 0; i < pending.length; i += CHUNK) {
       await Promise.all(pending.slice(i, i + CHUNK).map(processAndAnalyze));
+      // Update focus to next image in the queue if any
+      const next = pending[i + CHUNK];
+      setFocusedImageId(next ? next.id : null);
     }
+    // Clear focus after all done
+    setFocusedImageId(null);
 
     setProcessing(false);
     setAnalyzing(false);
   };
+
 
   const setItemSide = (id: string, side: 'front' | 'back' | 'none') => {
     setImages(prev => prev.map(img => img.id === id ? { ...img, side } : img));
@@ -451,6 +463,36 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
         )}
         {selectedAnalysis && (
           <ImageAnalysisPanel image={selectedAnalysis} onClose={() => setSelectedAnalysis(null)} />
+        )}
+
+        {/* Focus Overlay */}
+        {focusedImageId && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-900 rounded-2xl p-6 max-w-md w-full relative">
+              <button
+                onClick={() => setFocusedImageId(null)}
+                className="absolute top-2 right-2 text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+              {(() => {
+                const img = images.find(i => i.id === focusedImageId);
+                if (!img) return null;
+                return (
+                  <div className="flex flex-col items-center gap-4">
+                    <img src={img.result || img.preview} className="max-h-64 object-contain" alt="" />
+                    <p className="text-white text-sm font-medium">{img.statusText || img.status}</p>
+                    {img.geminiAnalysis && (
+                      <div className="w-full">
+                        <h3 className="text-white text-base font-bold mb-2">AI Insight</h3>
+                        <p className="text-gray-300 text-sm">{img.geminiAnalysis.description}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
         )}
       </AnimatePresence>
     </div>
