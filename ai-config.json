@@ -1,7 +1,7 @@
 {
   "aiProviders": {
     "gemini": {
-      "apiKeyEnvVar": "GEMINI_API_KEY",
+      "apiKeyEnvVar": "GEMINI_API_KEY_PROD",
       "model": "gemini-2.5-flash",
       "apiEndpoint": "https://generativelanguage.googleapis.com/v1beta/models/",
       "defaultConfig": {
@@ -31,7 +31,7 @@
         "stamps",
         "trading-cards", 
         "postcards",
-        "war-letters",
+        "letters",
         "coins",
         "books",
         "memorabilia"
@@ -46,7 +46,7 @@
   "workflowIntegrations": {
     "githubActions": {
       "autoFixEnabled": true,
-      "automergeEnabled": true,
+      "automergeEnabled": false,
       "aiAnalysisEnabled": true,
       "issueLabeling": true
     }

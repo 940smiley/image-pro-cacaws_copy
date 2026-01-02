@@ -119,3 +119,7 @@ export interface ProcessingResult {
     xlsx?: string;
   };
 }
+
+export interface CollectionImage {
+  image_file: ImageFile;
+}

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Download, X, ZoomIn, ZoomOut, Wand2, Hash } from 'lucide-react';
+import { Download, X, ZoomIn, ZoomOut, Wand2, Hash, RotateCcw, RotateCw } from 'lucide-react';
 import { CropArea } from '../types';
 
 interface ImageEditorProps {
@@ -250,6 +250,10 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
     img.src = image;
   };
 
+  const handleRotationChange = (angle: number) => {
+    setRotation(prev => prev + angle);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[95vh] flex flex-col overflow-hidden">
@@ -294,10 +298,14 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
 
         <div className="p-6 border-t bg-gray-50 space-y-4">
           <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <button onClick={() => handleRotationChange(-15)} className="p-2 hover:bg-gray-200 rounded-full"><RotateCcw className="w-4 h-4" /></button>
+              <button onClick={() => handleRotationChange(15)} className="p-2 hover:bg-gray-200 rounded-full"><RotateCw className="w-4 h-4" /></button>
+            </div>
             <div className="flex-1 min-w-[200px]">
               <label className="text-[10px] uppercase font-bold text-gray-500 mb-1 block">Fine Rotation ({rotation}°)</label>
               <input
-                type="range" min="0" max="359" value={rotation}
+                type="range" min="-45" max="45" value={rotation}
                 onChange={(e) => setRotation(parseInt(e.target.value))}
                 className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />

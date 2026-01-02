@@ -120,7 +120,7 @@ Deno.serve(async (req: Request) => {
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "Gemini API key not configured" }),
+        JSON.stringify({ error: "Gemini API key not configured. Please set the GEMINI_API_KEY environment variable in your Supabase project's Edge Functions settings for the 'analyze-image-gemini' function." }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

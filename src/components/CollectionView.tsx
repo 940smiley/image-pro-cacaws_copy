@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, ExternalLink, Tag, Calendar, ShieldCheck } from 'lucide-react';
+import { Trash2, ExternalLink, Tag, Calendar, ShieldCheck, RefreshCw } from 'lucide-react';
 import { ImageFile } from '../types';
 
 interface CollectionViewProps {
@@ -38,8 +38,9 @@ export default function CollectionView({ images, onRemove, onReprocess, onReproc
                 {onReprocessAll && (
                     <button
                         onClick={onReprocessAll}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
+                        <RefreshCw className="w-4 h-4" />
                         Reprocess All
                     </button>
                 )}
@@ -85,20 +86,20 @@ export default function CollectionView({ images, onRemove, onReprocess, onReproc
                                                 )}
                                             </div>
                                             <div className="flex gap-2">
+                                                {onReprocess && (
+                                                    <button
+                                                        onClick={() => onReprocess(image.id)}
+                                                        className="p-2 text-blue-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+                                                    >
+                                                        <RefreshCw className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => onRemove?.(image.id)}
                                                     className="p-2 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
-                                                {onReprocess && (
-                                                    <button
-                                                        onClick={() => onReprocess?.(image.id)}
-                                                        className="p-2 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                                                    >
-                                                        Reprocess
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
 
