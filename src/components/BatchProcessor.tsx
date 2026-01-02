@@ -56,11 +56,11 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
   const handleAutoDetect = async (image: ImageFile) => {
     const canvas = await loadImageToCanvas(image.file);
     const detections = autoDetectObjects(canvas);
-    
+
     if (detections.length > 0) {
       alert(`Detected ${detections.length} potential items! Creating individual crops...`);
       const newImages: ImageFile[] = [];
-      
+
       for (let i = 0; i < detections.length; i++) {
         const crop = detections[i];
         const croppedCanvas = document.createElement('canvas');
@@ -68,10 +68,10 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
         croppedCanvas.height = crop.height;
         const ctx = croppedCanvas.getContext('2d')!;
         ctx.drawImage(canvas, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-        
+
         const blob = await new Promise<Blob>(res => croppedCanvas.toBlob(b => res(b!), 'image/png'));
         const file = new File([blob], `crop-${i}-${image.file.name}`, { type: 'image/png' });
-        
+
         newImages.push({
           id: Math.random().toString(36).substr(2, 9),
           file,
@@ -194,10 +194,10 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
 
     for (let i = 0; i < pendingImages.length; i += BATCH_SIZE) {
       const batch = pendingImages.slice(i, i + BATCH_SIZE);
-      
+
       // Update status to processing for the current batch
-      setImages(prev => 
-        prev.map(img => 
+      setImages(prev =>
+        prev.map(img =>
           batch.some(b => b.id === img.id) ? { ...img, status: 'processing' } : img
         )
       );
@@ -208,7 +208,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
       );
 
       // Update results
-      setImages(prev => 
+      setImages(prev =>
         prev.map(img => {
           const result = results.find(r => r.id === img.id);
           return result || img;
@@ -259,10 +259,10 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
       }
 
       canvas = cropImage(canvas, cropArea);
-      operations.push({ 
-        type: 'crop', 
-        params: { ...cropArea } as any, 
-        timestamp: new Date().toISOString() 
+      operations.push({
+        type: 'crop',
+        params: { ...cropArea } as any,
+        timestamp: new Date().toISOString()
       });
 
       if (settings.auto_enhance) {
@@ -357,6 +357,19 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
           );
         }
 
+        // Skip if local analysis is confident there's nothing interesting
+        if (localAnalysis && !localAnalysis.hasObject && localAnalysis.possibleType === 'blank-or-background') {
+          console.log(`Skipping Gemini analysis for ${image.file.name}: Local scan indicates blank image.`);
+          setImages(prev =>
+            prev.map(img =>
+              img.id === image.id
+                ? { ...img, status: 'completed', geminiAnalysis: { description: 'Blank image (Local Scan)', objects: [], categories: [], colors: [], confidence: 100 } }
+                : img
+            )
+          );
+          continue;
+        }
+
         // Use specialized analysis for collectibles
         const analysis = await (collectibleType !== 'other'
           ? analyzeCollectibleWithGemini(image.file, collectibleType)
@@ -375,7 +388,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
         // Renaming logic to identified object
         let newFilename = image.file.name;
         const extension = image.file.name.split('.').pop();
-        
+
         if (analysis.collectibleDetails) {
           newFilename = generateCollectibleFilename(image.file.name, analysis);
         } else if (analysis.objects && analysis.objects.length > 0) {
@@ -390,20 +403,20 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
           prev.map(img =>
             img.id === image.id
               ? {
-                  ...img,
-                  geminiAnalysis: analysis,
-                  ebayData,
-                  file: new File([image.file], newFilename, { type: image.file.type })
-                }
+                ...img,
+                geminiAnalysis: analysis,
+                ebayData,
+                file: new File([image.file], newFilename, { type: image.file.type })
+              }
               : img
           )
         );
       } catch (error) {
         console.error('Error analyzing image:', error);
-        setImages(prev => 
-          prev.map(img => 
-            img.id === image.id 
-              ? { ...img, status: 'error', error: error instanceof Error ? error.message : 'Analysis failed' } 
+        setImages(prev =>
+          prev.map(img =>
+            img.id === image.id
+              ? { ...img, status: 'error', error: error instanceof Error ? error.message : 'Analysis failed' }
               : img
           )
         );

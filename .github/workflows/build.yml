@@ -147,3 +147,32 @@ jobs:
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
+  deploy-supabase:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase Project
+        run: supabase link --project-ref $PROJECT_ID --password $SUPABASE_DB_PASSWORD
+
+      - name: Deploy Edge Functions
+        run: |
+          supabase functions deploy analyze-image-gemini --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy ebay-create-listing --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy ebay-search-pricing --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy embed-metadata --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy facebook-post-generation --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy generate-csv-export --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy generate-pdf-report --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy multi-provider-ai --no-verify-jwt --import-map supabase/import_map.json
+          supabase functions deploy rename-images --no-verify-jwt --import-map supabase/import_map.json
