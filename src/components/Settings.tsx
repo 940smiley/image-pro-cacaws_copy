@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Save, Moon, Sun } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import EbayConfig from 'src/components/EbayConfig';
 import { themeManager } from '../lib/themeManager';
 import { UserSettings } from '../types';
 
@@ -195,6 +196,11 @@ export default function Settings({ settings, onSettingsChange, onThemeChange }: 
         <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Source Control</h3>
             <SourceRepoManager />
+        </div>
+
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">eBay API Configuration</h3>
+          <EbayConfig />
         </div>
 
         <div className="border-t pt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
