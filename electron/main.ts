@@ -1,6 +1,6 @@
-import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
+import { app, BrowserWindow, Menu, MenuItemConstructorOptions, ipcMain, dialog } from 'electron';
 import * as path from 'path';
-import * as url from 'url';
+import * as fs from 'fs/promises';
 
 let mainWindow: BrowserWindow | null;
 
@@ -36,7 +36,7 @@ function createApplicationMenu() {
     {
       label: 'Application',
       submenu: [
-        { label: 'About Image Pro', selector: 'orderFrontStandardAboutPanel:' },
+        { label: 'About Image Pro', role: 'about' },
         { type: 'separator' },
         { label: 'Quit', accelerator: 'Command+Q', click: () => app.quit() }
       ]
@@ -44,12 +44,12 @@ function createApplicationMenu() {
     {
       label: 'Edit',
       submenu: [
-        { label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:' },
-        { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:' },
+        { label: 'Undo', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+        { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
         { type: 'separator' },
-        { label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:' },
-        { label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:' },
-        { label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:' },
+        { label: 'Cut', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+        { label: 'Copy', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+        { label: 'Paste', accelerator: 'CmdOrCtrl+V', role: 'paste' },
       ]
     },
     {
@@ -59,8 +59,8 @@ function createApplicationMenu() {
         { label: 'Toggle DevTools', accelerator: 'CmdOrCtrl+I', click: () => mainWindow?.webContents.toggleDevTools() },
         { type: 'separator' },
         { label: 'Actual Size', accelerator: 'CmdOrCtrl+0', click: () => mainWindow?.webContents.setZoomLevel(0) },
-        { label: 'Zoom In', accelerator: 'CmdOrCtrl+=', click: () => mainWindow?.webContents.setZoomLevel(mainWindow.webContents.getZoomLevel() + 1) },
-        { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', click: () => mainWindow?.webContents.setZoomLevel(mainWindow.webContents.getZoomLevel() - 1) },
+        { label: 'Zoom In', accelerator: 'CmdOrCtrl+=', click: () => mainWindow?.webContents.setZoomLevel((mainWindow?.webContents.getZoomLevel() || 0) + 1) },
+        { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', click: () => mainWindow?.webContents.setZoomLevel((mainWindow?.webContents.getZoomLevel() || 0) - 1) },
       ]
     }
   ];
@@ -68,6 +68,30 @@ function createApplicationMenu() {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 }
+
+// IPC Handlers
+ipcMain.handle('read-file', async (_event, filePath: string) => {
+  return await fs.readFile(filePath, 'utf-8');
+});
+
+ipcMain.handle('write-file', async (_event, filePath: string, data: string) => {
+  try {
+    await fs.writeFile(filePath, data, 'utf-8');
+    return true;
+  } catch (error) {
+    console.error('Failed to write file:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('select-directory', async () => {
+  if (!mainWindow) return null;
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory'],
+  });
+  if (result.canceled) return null;
+  return result.filePaths[0];
+});
 
 app.whenReady().then(() => {
   createWindow();

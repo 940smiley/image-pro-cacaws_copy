@@ -42,7 +42,6 @@ jobs:
   build-desktop:
     needs: build-web
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -60,10 +59,15 @@ jobs:
       run: npm ci
 
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
+      uses: dsobbe/rustup-toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
 
-    - name: Install Tauri CLI
-      run: cargo install tauri-cli
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: "./src-tauri -> target"
 
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -74,8 +78,7 @@ jobs:
     - name: Build desktop application
       run: |
         npm run build
-        cd src-tauri
-        cargo tauri build
+        npm run tauri build
       env:
         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
         VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -89,7 +92,6 @@ jobs:
   build-electron:
     needs: build-web
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]

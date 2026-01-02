@@ -18,8 +18,8 @@
     "build:all:win": "scripts/build-and-release.bat",
     "test": "npm run typecheck && npm run lint",
     "release": "bash scripts/build-and-release.sh",
-    "electron:dev": "tsc electron/main.ts --outDir dist_electron && tsc electron/preload.ts --outDir dist_electron && electron dist_electron/main.js",
-    "electron:build": "tsc electron/main.ts --outDir dist_electron && tsc electron/preload.ts --outDir dist_electron",
+    "electron:dev": "tsc -p tsconfig.electron.json && electron dist_electron/main.js",
+    "electron:build": "tsc -p tsconfig.electron.json",
     "build:electron": "npm run build && npm run electron:build && electron-builder",
     "dist": "npm run build && npm run electron:build && electron-builder --publish=never"
   },
@@ -49,6 +49,7 @@
     "postcss": "^8.4.35",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.5.3",
+    "typescript-eslint": "^8.51.0",
     "vite": "^7.3.0"
   },
   "build": {

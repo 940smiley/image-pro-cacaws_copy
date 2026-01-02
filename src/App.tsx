@@ -30,7 +30,7 @@ const defaultSettings: UserSettings = {
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('processor');
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [showAiProviderConfig, setShowAiProviderConfig] = useState(false);
@@ -40,15 +40,17 @@ function App() {
   useEffect(() => {
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) loadSettings(session.user.id);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) loadSettings(currentUser.id);
       else setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) loadSettings(session.user.id);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) loadSettings(currentUser.id);
       else setLoading(false);
     });
 
@@ -58,8 +60,8 @@ function App() {
   const loadSettings = async (userId: string) => {
     try {
       setLoading(true);
-      const savedTheme = themeManager.getSavedTheme() || ('auto' as any);
-      themeManager.applyTheme(savedTheme);
+      const savedTheme = themeManager.getSavedTheme() || 'auto';
+      themeManager.applyTheme(savedTheme as any);
 
       const { data } = await supabase
         .from('user_settings')
@@ -164,7 +166,7 @@ function App() {
                   </p>
                 </div>
               )}
-              <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
+              <span className="text-sm text-gray-500 hidden sm:block">{(user as any)?.email}</span>
               <button
                 onClick={handleSignOut}
                 className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -184,11 +186,10 @@ function App() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'text-blue-600'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative whitespace-nowrap ${activeTab === tab.id
+                    ? 'text-blue-600'
+                    : 'text-gray-600 hover:text-gray-800'
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   {tab.label}
