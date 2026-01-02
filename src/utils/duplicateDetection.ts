@@ -12,7 +12,9 @@ export async function computeFileHash(file: File): Promise<string> {
 /**
  * Checks a list of image files for duplicates based on their hashes
  */
-export function flagDuplicates(images: any[]): any[] {
+import { ImageFile } from '../types';
+
+export function flagDuplicates(images: ImageFile[]): ImageFile[] {
   const seenHashes = new Map<string, string>(); // hash -> first_id
   
   return images.map(img => {
