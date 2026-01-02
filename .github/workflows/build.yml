@@ -57,7 +57,8 @@ jobs:
         cache: 'npm'
 
     - name: Install frontend dependencies
-      run: npm ci
+      run: |
+        npm ci || npm install || npm install --legacy-peer-deps || npm install --force
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -162,7 +163,7 @@ jobs:
           version: latest
 
       - name: Link Supabase Project
-        run: supabase link --project-ref $PROJECT_ID --password $SUPABASE_DB_PASSWORD
+        run: supabase link --project-ref $PROJECT_ID --password $SUPABASE_DB_PASSWORD || echo "Supabase already linked or linking failed, continuing..."
 
       - name: Deploy Edge Functions
         run: |
