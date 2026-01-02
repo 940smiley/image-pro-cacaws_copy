@@ -59,10 +59,7 @@ jobs:
       run: npm ci
 
     - name: Install Rust
-      uses: dsobbe/rustup-toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
+      uses: dtolnay/rust-toolchain@stable
 
     - name: Rust cache
       uses: swatinem/rust-cache@v2
@@ -152,7 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      PROJECT_ID: yjprcligtorgfclladdc
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
     steps:
