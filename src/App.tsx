@@ -72,8 +72,8 @@ function App() {
         themeManager.applyTheme(data.theme as any);
       } else {
         const newSettings = {
-          user_id: userId,
           ...defaultSettings,
+          user_id: userId,
         };
         const { data: created } = await supabase
           .from('user_settings')

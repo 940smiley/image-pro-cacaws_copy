@@ -191,7 +191,7 @@ export const processImageWithOperations = async (
         canvas = expandImage(canvas, op.params.percentage as number);
         break;
       case 'crop':
-        canvas = cropImage(canvas, op.params as CropArea);
+        canvas = cropImage(canvas, op.params as unknown as CropArea);
         break;
       case 'enhance':
         canvas = enhanceImage(canvas);
@@ -274,8 +274,7 @@ export const autoDetectObjects = (canvas: HTMLCanvasElement): CropArea[] => {
 /**
  * Snaps a crop area to the closest high-contrast edges.
  */
-export const magicCrop = (canvas: HTMLCanvasElement, currentArea: CropArea): CropArea => {
-  const ctx = canvas.getContext('2d')!;
+export const magicCrop = (_canvas: HTMLCanvasElement, currentArea: CropArea): CropArea => {
   // We look around the current boundaries to find the "sharpest" transition
   // This is a simplified version of an edge-snapping algorithm
   return currentArea; // Placeholder: in a real CV app, we'd use Canny edge detection here

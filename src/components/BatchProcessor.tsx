@@ -1,58 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Image as ImageIcon, Trash2, Download, Play, AlertCircle, CheckCircle, Loader, Zap, ShoppingCart, Package, Share2, Upload as UploadIcon, Copy } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, Download, Play, AlertCircle, CheckCircle, Loader, Zap, ShoppingCart, Package, Share2, Upload as UploadIcon, Copy, LayoutGrid, FileOutput } from 'lucide-react';
 import { ImageFile, UserSettings, CropArea, ProcessingResult } from '../types';
-import { loadImageToCanvas, expandImage, cropImage, enhanceImage, downloadImage, rotateImage } from '../utils/imageProcessing';
+import { loadImageToCanvas, expandImage, cropImage, enhanceImage, downloadImage, rotateImage, autoDetectObjects } from '../utils/imageProcessing';
 import { analyzeImageWithGemini, searchEbayPricing } from '../utils/apiClient';
 import { analyzeCollectibleWithGemini } from '../utils/apiClient';
 import { generateSmartFilename, generateCollectibleFilename } from '../utils/filenameGenerator';
 import { createMetadataObject } from '../utils/metadataHandler';
 import { computeFileHash, flagDuplicates } from '../utils/duplicateDetection';
 import { scanImageLocally, LocalAnalysis } from '../utils/localScanner';
-import { autoDetectObjects } from '../utils/imageProcessing';
 import ImageEditor from './ImageEditor';
 import ImageAnalysisPanel from './ImageAnalysisPanel';
-import { LayoutGrid, FileOutput } from 'lucide-react';
 
 interface BatchProcessorProps {
-...
-  const handleAutoDetect = async (image: ImageFile) => {
-    const canvas = await loadImageToCanvas(image.file);
-    const detections = autoDetectObjects(canvas);
-    
-    if (detections.length > 0) {
-      alert(`Detected \${detections.length} potential items! Creating individual crops...`);
-      const newImages: ImageFile[] = [];
-      
-      for (let i = 0; i < detections.length; i++) {
-        const crop = detections[i];
-        const croppedCanvas = document.createElement('canvas');
-        croppedCanvas.width = crop.width;
-        croppedCanvas.height = crop.height;
-        const ctx = croppedCanvas.getContext('2d')!;
-        ctx.drawImage(canvas, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-        
-        const blob = await new Promise<Blob>(res => croppedCanvas.toBlob(b => res(b!), 'image/png'));
-        const file = new File([blob], `crop-\${i}-\${image.file.name}`, { type: 'image/png' });
-        
-        newImages.push({
-          id: Math.random().toString(36).substr(2, 9),
-          file,
-          preview: URL.createObjectURL(blob),
-          status: 'completed',
-          result: URL.createObjectURL(blob),
-          operations: [{ type: 'crop', params: { ...crop } as any, timestamp: new Date().toISOString() }]
-        });
-      }
-      setImages(prev => [...prev.filter(img => img.id !== image.id), ...newImages]);
-    } else {
-      alert("No distinct items detected. Try manual cropping.");
-    }
-  };
-
-  const handleMandatoryExport = () => {
-    alert("Triggering mandatory collection backup (PDF/CSV)...");
-    // In a real app, this would call your exportUtils
-  };
   settings: UserSettings;
   onProcessingComplete?: (results: ProcessingResult[], images: ImageFile[]) => void;
 }
@@ -93,6 +52,45 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
       }
     }
   }, [processing, images, onProcessingComplete]);
+
+  const handleAutoDetect = async (image: ImageFile) => {
+    const canvas = await loadImageToCanvas(image.file);
+    const detections = autoDetectObjects(canvas);
+    
+    if (detections.length > 0) {
+      alert(`Detected ${detections.length} potential items! Creating individual crops...`);
+      const newImages: ImageFile[] = [];
+      
+      for (let i = 0; i < detections.length; i++) {
+        const crop = detections[i];
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = crop.width;
+        croppedCanvas.height = crop.height;
+        const ctx = croppedCanvas.getContext('2d')!;
+        ctx.drawImage(canvas, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+        
+        const blob = await new Promise<Blob>(res => croppedCanvas.toBlob(b => res(b!), 'image/png'));
+        const file = new File([blob], `crop-${i}-${image.file.name}`, { type: 'image/png' });
+        
+        newImages.push({
+          id: Math.random().toString(36).substr(2, 9),
+          file,
+          preview: URL.createObjectURL(blob),
+          status: 'completed',
+          result: URL.createObjectURL(blob),
+          operations: [{ type: 'crop', params: { ...crop } as any, timestamp: new Date().toISOString() }]
+        });
+      }
+      setImages(prev => [...prev.filter(img => img.id !== image.id), ...newImages]);
+    } else {
+      alert("No distinct items detected. Try manual cropping.");
+    }
+  };
+
+  const handleMandatoryExport = () => {
+    alert("Triggering mandatory collection backup (PDF/CSV)...");
+    // In a real app, this would call your exportUtils
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -359,15 +357,12 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
           );
         }
 
-        // If local scan says it's blank/background, maybe skip or warn (optional)
-        // For now, we proceed but we've reduced server "stress" by knowing what it is
-
         // Use specialized analysis for collectibles
-        const analysis = collectibleType !== 'other'
-          ? await analyzeCollectibleWithGemini(image.file, collectibleType)
-          : await analyzeImageWithGemini(image.file);
+        const analysis = await (collectibleType !== 'other'
+          ? analyzeCollectibleWithGemini(image.file, collectibleType)
+          : analyzeImageWithGemini(image.file));
 
-        let ebayData;
+        let ebayData: any;
         if (analysis.objects && analysis.objects.length > 0) {
           try {
             const searchQuery = analysis.objects.slice(0, 2).join(' ');

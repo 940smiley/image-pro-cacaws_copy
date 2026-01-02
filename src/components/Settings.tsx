@@ -19,7 +19,7 @@ const defaultSettings: Omit<UserSettings, 'id' | 'user_id' | 'created_at' | 'upd
   show_tips: true,
 };
 
-export default function Settings({ settings, onSettingsChange }: SettingsProps) {
+export default function Settings({ settings, onSettingsChange, onThemeChange }: SettingsProps) {
   const [localSettings, setLocalSettings] = useState(settings || defaultSettings);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
