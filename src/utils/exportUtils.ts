@@ -245,15 +245,15 @@ export const exportToCsv = (results: ProcessingResult[]): string => {
  * @param images Array of image files
  * @returns XLSX file as Blob
  */
-export const exportToXlsx = async (results: ProcessingResult[], _images: ImageFile[]): Promise<Blob> => {
+export const exportToXlsx = async (results: ProcessingResult[]): Promise<Blob> => {
   // Create a workbook
   const wb = utils.book_new();
-  
+
   // Create a worksheet with results data
   const wsData = [
     ['ID', 'Original Filename', 'New Filename', 'Description', 'Objects', 'Categories', 'Colors', 'Condition', 'Estimated Value', 'Analysis Confidence']
   ];
-  
+
   results.forEach(result => {
     wsData.push([
       result.id,
@@ -268,25 +268,25 @@ export const exportToXlsx = async (results: ProcessingResult[], _images: ImageFi
       String(result.analysis.confidence)
     ]);
   });
-  
+
   const ws = utils.aoa_to_sheet(wsData);
   utils.book_append_sheet(wb, ws, 'Results');
-  
+
   // Create another sheet for image metadata
   const metadataWsData = [
     ['Filename', 'Metadata Key', 'Metadata Value']
   ];
-  
+
   results.forEach(result => {
     const metadata = createMetadataObject(result.analysis, result.operations, result.originalFilename);
     Object.entries(metadata).forEach(([key, value]) => {
       metadataWsData.push([result.newFilename, key, String(value)]);
     });
   });
-  
+
   const metadataWs = utils.aoa_to_sheet(metadataWsData);
   utils.book_append_sheet(wb, metadataWs, 'Metadata');
-  
+
   // Write the workbook and return as blob
   const wbout = write(wb, { bookType: 'xlsx', type: 'array' });
   return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -298,15 +298,15 @@ export const exportToXlsx = async (results: ProcessingResult[], _images: ImageFi
  * @param images Array of image files
  * @returns PDF as Blob
  */
-export const exportToPdf = async (results: ProcessingResult[], _images: ImageFile[]): Promise<Blob> => {
+export const exportToPdf = async (results: ProcessingResult[]): Promise<Blob> => {
   const pdfDoc = await PDFDocument.create();
-  
+
   for (const result of results) {
     // Add a new page for each result
     const page = pdfDoc.addPage([595, 842]); // A4 size in points
-    const { width: _width, height } = page.getSize();
+    const { height } = page.getSize();
     const fontSize = 12;
-    
+
     // Add title
     page.drawText(`Image: ${result.newFilename}`, {
       x: 50,
@@ -314,7 +314,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
       size: 16,
       color: rgb(0, 0, 0),
     });
-    
+
     // Add description
     page.drawText(`Description: ${result.analysis.description}`, {
       x: 50,
@@ -322,7 +322,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
       size: fontSize,
       color: rgb(0, 0, 0),
     });
-    
+
     // Add objects identified
     page.drawText(`Objects: ${result.analysis.objects.join(', ')}`, {
       x: 50,
@@ -330,7 +330,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
       size: fontSize,
       color: rgb(0, 0, 0),
     });
-    
+
     // Add categories
     page.drawText(`Categories: ${result.analysis.categories.join(', ')}`, {
       x: 50,
@@ -338,7 +338,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
       size: fontSize,
       color: rgb(0, 0, 0),
     });
-    
+
     // Add colors
     page.drawText(`Colors: ${result.analysis.colors.join(', ')}`, {
       x: 50,
@@ -346,12 +346,12 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
       size: fontSize,
       color: rgb(0, 0, 0),
     });
-    
+
     // Add collectible details if available
     if (result.analysis.collectibleDetails) {
       const details = result.analysis.collectibleDetails;
       let yPos = height - 170;
-      
+
       page.drawText(`Collectible Type: ${details.type}`, {
         x: 50,
         y: yPos,
@@ -359,7 +359,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
         color: rgb(0, 0, 0),
       });
       yPos -= 20;
-      
+
       if (details.era) {
         page.drawText(`Era: ${details.era}`, {
           x: 50,
@@ -369,7 +369,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
         });
         yPos -= 20;
       }
-      
+
       if (details.country) {
         page.drawText(`Country: ${details.country}`, {
           x: 50,
@@ -379,7 +379,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
         });
         yPos -= 20;
       }
-      
+
       if (details.year) {
         page.drawText(`Year: ${details.year}`, {
           x: 50,
@@ -389,7 +389,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
         });
         yPos -= 20;
       }
-      
+
       if (details.condition) {
         page.drawText(`Condition: ${details.condition}`, {
           x: 50,
@@ -399,7 +399,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
         });
         yPos -= 20;
       }
-      
+
       if (details.rarity) {
         page.drawText(`Rarity: ${details.rarity}`, {
           x: 50,
@@ -409,7 +409,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
         });
         yPos -= 20;
       }
-      
+
       page.drawText(`Estimated Value: $${details.estimatedValue}`, {
         x: 50,
         y: yPos,
@@ -418,7 +418,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
       });
       yPos -= 20;
     }
-    
+
     // Add condition assessment
     if (result.analysis.conditionAssessment) {
       page.drawText(`Condition Assessment: ${result.analysis.conditionAssessment}`, {
@@ -428,7 +428,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
         color: rgb(0, 0, 0),
       });
     }
-    
+
     // Add estimated value range
     if (result.analysis.estimatedValueRange) {
       const { min, max } = result.analysis.estimatedValueRange;
@@ -439,7 +439,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
         color: rgb(0, 0, 0),
       });
     }
-    
+
     // Add confidence
     page.drawText(`Analysis Confidence: ${result.analysis.confidence}%`, {
       x: 50,
@@ -447,7 +447,7 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
       size: fontSize,
       color: rgb(0, 0, 0),
     });
-    
+
     // Add processing operations
     const operations = result.operations.map(op => `${op.type}: ${JSON.stringify(op.params)}`).join(', ');
     page.drawText(`Processing Operations: ${operations}`, {
@@ -457,9 +457,10 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
       color: rgb(0, 0, 0),
     });
   }
-  
+
   // Serialize the PDF and return as blob
   const pdfBytes = await pdfDoc.save();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new Blob([pdfBytes as any], { type: 'application/pdf' });
 };
 
@@ -471,23 +472,23 @@ export const exportToPdf = async (results: ProcessingResult[], _images: ImageFil
  */
 export const exportAll = async (results: ProcessingResult[], images: ImageFile[]): Promise<Blob> => {
   const zip = new JSZip();
-  
+
   // Add JSON export
   const jsonContent = exportToJson(results);
   zip.file('results.json', jsonContent);
-  
+
   // Add CSV export
   const csvContent = exportToCsv(results);
   zip.file('results.csv', csvContent);
-  
+
   // Add XLSX export
-  const xlsxBlob = await exportToXlsx(results, images);
+  const xlsxBlob = await exportToXlsx(results);
   zip.file('results.xlsx', xlsxBlob);
-  
+
   // Add PDF export
-  const pdfBlob = await exportToPdf(results, images);
+  const pdfBlob = await exportToPdf(results);
   zip.file('results.pdf', pdfBlob);
-  
+
   // Add processed images
   const imagesFolder = zip.folder('processed_images');
   if (imagesFolder) {
@@ -500,7 +501,7 @@ export const exportAll = async (results: ProcessingResult[], images: ImageFile[]
       }
     }
   }
-  
+
   // Generate the zip file
   const zipContent = await zip.generateAsync({ type: 'blob' });
   return zipContent;

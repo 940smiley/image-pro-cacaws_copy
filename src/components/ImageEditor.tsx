@@ -22,9 +22,11 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, area: { ...cropArea } });
   const [perfCount, setPerfCount] = useState<{ horizontal: number, vertical: number } | null>(null);
 
+  const imageRef = useRef<HTMLImageElement | null>(null);
+
   const draw = useCallback((ctx: CanvasRenderingContext2D, img: HTMLImageElement, canvasWidth: number, canvasHeight: number, area: CropArea, rot: number, imgDrawWidth: number, imgDrawHeight: number) => {
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
+
     // Draw rotated image
     ctx.save();
     ctx.translate(canvasWidth / 2, canvasHeight / 2);
@@ -70,65 +72,79 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
     // Handles
     const hs = 10; // handle size
     ctx.fillStyle = '#3b82f6';
-    
+
     // Corners
-    ctx.fillRect(area.x - hs/2, area.y - hs/2, hs, hs); // TL
-    ctx.fillRect(area.x + area.width - hs/2, area.y - hs/2, hs, hs); // TR
-    ctx.fillRect(area.x - hs/2, area.y + area.height - hs/2, hs, hs); // BL
-    ctx.fillRect(area.x + area.width - hs/2, area.y + area.height - hs/2, hs, hs); // BR
-    
+    ctx.fillRect(area.x - hs / 2, area.y - hs / 2, hs, hs); // TL
+    ctx.fillRect(area.x + area.width - hs / 2, area.y - hs / 2, hs, hs); // TR
+    ctx.fillRect(area.x - hs / 2, area.y + area.height - hs / 2, hs, hs); // BL
+    ctx.fillRect(area.x + area.width - hs / 2, area.y + area.height - hs / 2, hs, hs); // BR
+
     // Sides
-    ctx.fillRect(area.x + area.width/2 - hs/2, area.y - hs/2, hs, hs); // T
-    ctx.fillRect(area.x + area.width/2 - hs/2, area.y + area.height - hs/2, hs, hs); // B
-    ctx.fillRect(area.x - hs/2, area.y + area.height/2 - hs/2, hs, hs); // L
-    ctx.fillRect(area.x + area.width - hs/2, area.y + area.height/2 - hs/2, hs, hs); // R
+    ctx.fillRect(area.x + area.width / 2 - hs / 2, area.y - hs / 2, hs, hs); // T
+    ctx.fillRect(area.x + area.width / 2 - hs / 2, area.y + area.height - hs / 2, hs, hs); // B
+    ctx.fillRect(area.x - hs / 2, area.y + area.height / 2 - hs / 2, hs, hs); // L
+    ctx.fillRect(area.x + area.width - hs / 2, area.y + area.height / 2 - hs / 2, hs, hs); // R
   }, [showGrid]);
 
+  // Load image once
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      imageRef.current = img;
+      // Trigger a re-render to ensure size calculation happens
+      setImageSize({ width: img.width, height: img.height });
+    };
+    img.src = image;
+  }, [image]);
+
+  // Handle drawing and resizing
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const img = imageRef.current;
+    if (!canvas || !img) return;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const img = new Image();
-    img.onload = () => {
-      const maxWidth = 800;
-      const maxHeight = 600;
-      const radians = (rotation * Math.PI) / 180;
-      const cos = Math.abs(Math.cos(radians));
-      const sin = Math.abs(Math.sin(radians));
-      const rotatedWidth = img.width * cos + img.height * sin;
-      const rotatedHeight = img.width * sin + img.height * cos;
+    const maxWidth = 800;
+    const maxHeight = 600;
+    const radians = (rotation * Math.PI) / 180;
+    const cos = Math.abs(Math.cos(radians));
+    const sin = Math.abs(Math.sin(radians));
+    const rotatedWidth = img.width * cos + img.height * sin;
+    const rotatedHeight = img.width * sin + img.height * cos;
 
-      let scaleFactor = Math.min(maxWidth / rotatedWidth, maxHeight / rotatedHeight, 1);
-      const displayWidth = rotatedWidth * scaleFactor;
-      const displayHeight = rotatedHeight * scaleFactor;
+    const scaleFactor = Math.min(maxWidth / rotatedWidth, maxHeight / rotatedHeight, 1);
+    const displayWidth = rotatedWidth * scaleFactor;
+    const displayHeight = rotatedHeight * scaleFactor;
 
+    // Only update canvas dimensions if they changed to avoid flickering/clearing
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
       canvas.width = displayWidth;
       canvas.height = displayHeight;
       setImageSize({ width: displayWidth, height: displayHeight });
+    }
 
-      draw(ctx, img, displayWidth, displayHeight, cropArea, rotation, img.width * scaleFactor, img.height * scaleFactor);
-    };
-    img.src = image;
-  }, [image, rotation, cropArea, draw]);
+    draw(ctx, img, displayWidth, displayHeight, cropArea, rotation, img.width * scaleFactor, img.height * scaleFactor);
+  }, [image, rotation, cropArea, draw, imageSize.width]); // Added imageSize.width to dependency to retry if load happened
+
 
   const getHandleAt = (x: number, y: number): HandleType | null => {
     const hs = 20; // Larger hit area
     const { x: ax, y: ay, width: aw, height: ah } = cropArea;
-    
+
     if (Math.abs(x - ax) < hs && Math.abs(y - ay) < hs) return 'tl';
     if (Math.abs(x - (ax + aw)) < hs && Math.abs(y - ay) < hs) return 'tr';
     if (Math.abs(x - ax) < hs && Math.abs(y - (ay + ah)) < hs) return 'bl';
     if (Math.abs(x - (ax + aw)) < hs && Math.abs(y - (ay + ah)) < hs) return 'br';
-    
-    if (Math.abs(x - (ax + aw/2)) < hs && Math.abs(y - ay) < hs) return 't';
-    if (Math.abs(x - (ax + aw/2)) < hs && Math.abs(y - (ay + ah)) < hs) return 'b';
-    if (Math.abs(x - ax) < hs && Math.abs(y - (ay + ah/2)) < hs) return 'l';
-    if (Math.abs(x - (ax + aw)) < hs && Math.abs(y - (ay + ah/2)) < hs) return 'r';
-    
+
+    if (Math.abs(x - (ax + aw / 2)) < hs && Math.abs(y - ay) < hs) return 't';
+    if (Math.abs(x - (ax + aw / 2)) < hs && Math.abs(y - (ay + ah)) < hs) return 'b';
+    if (Math.abs(x - ax) < hs && Math.abs(y - (ay + ah / 2)) < hs) return 'l';
+    if (Math.abs(x - (ax + aw)) < hs && Math.abs(y - (ay + ah / 2)) < hs) return 'r';
+
     if (x > ax && x < ax + aw && y > ay && y < ay + ah) return 'move';
-    
+
     return null;
   };
 
@@ -138,7 +154,7 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) / (rect.width / canvas.width);
     const y = (e.clientY - rect.top) / (rect.height / canvas.height);
-    
+
     const handle = getHandleAt(x, y);
     if (handle) {
       setActiveHandle(handle);
@@ -153,7 +169,7 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) / (rect.width / canvas.width);
     const y = (e.clientY - rect.top) / (rect.height / canvas.height);
-    
+
     const dx = x - dragStart.x;
     const dy = y - dragStart.y;
     const newArea = { ...dragStart.area };
@@ -258,7 +274,7 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
               className="bg-white shadow-2xl rounded border border-gray-300 cursor-crosshair"
               style={{ transform: `scale(${scale})`, transformOrigin: 'center' }}
             />
-            
+
             {perfCount && (
               <div className="absolute -top-12 left-0 right-0 flex justify-center">
                 <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-2">
@@ -280,21 +296,21 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px]">
               <label className="text-[10px] uppercase font-bold text-gray-500 mb-1 block">Fine Rotation ({rotation}°)</label>
-              <input 
-                type="range" min="0" max="359" value={rotation} 
+              <input
+                type="range" min="0" max="359" value={rotation}
                 onChange={(e) => setRotation(parseInt(e.target.value))}
                 className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
-            
+
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={handleMagicCrop}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-bold"
               >
                 <Wand2 className="w-4 h-4" /> Magic Crop
               </button>
-              <button 
+              <button
                 onClick={handlePerfCount}
                 className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-bold"
               >

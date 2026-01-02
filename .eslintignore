@@ -1,6 +1,0 @@
-dist
-dist_electron
-node_modules
-supabase/functions
-*.cjs
-*.js

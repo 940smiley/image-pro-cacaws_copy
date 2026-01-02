@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Upload, Image as ImageIcon, Trash2, Download, Play, AlertCircle, CheckCircle, Loader, Zap, Copy, LayoutGrid, FileOutput } from 'lucide-react';
-import { ImageFile, UserSettings, CropArea, ProcessingResult } from '../types';
+import { ImageFile, UserSettings, CropArea, ProcessingResult, EbayPricingData } from '../types';
 import { loadImageToCanvas, expandImage, cropImage, enhanceImage, downloadImage, rotateImage, autoDetectObjects } from '../utils/imageProcessing';
 import { analyzeImageWithGemini, searchEbayPricing } from '../utils/apiClient';
 import { analyzeCollectibleWithGemini } from '../utils/apiClient';
@@ -22,7 +22,6 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
   const [images, setImages] = useState<ImageFile[]>([]);
   const [processing, setProcessing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const [selectedAnalysis, setSelectedAnalysis] = useState<ImageFile | null>(null);
   const [editingImage, setEditingImage] = useState<ImageFile | null>(null);
   const [collectibleType, setCollectibleType] = useState<'stamp' | 'trading-card' | 'postcard' | 'war-letter' | 'other'>('other');
@@ -78,7 +77,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
           preview: URL.createObjectURL(blob),
           status: 'completed',
           result: URL.createObjectURL(blob),
-          operations: [{ type: 'crop', params: { ...crop } as any, timestamp: new Date().toISOString() }]
+          operations: [{ type: 'crop', params: crop as unknown as Record<string, number | string | boolean>, timestamp: new Date().toISOString() }]
         });
       }
       setImages(prev => [...prev.filter(img => img.id !== image.id), ...newImages]);
@@ -261,7 +260,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
       canvas = cropImage(canvas, cropArea);
       operations.push({
         type: 'crop',
-        params: { ...cropArea } as any,
+        params: cropArea as unknown as Record<string, number | string | boolean>,
         timestamp: new Date().toISOString()
       });
 
@@ -339,12 +338,9 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
     if (unanalyzed.length === 0) return;
 
     setAnalyzing(true);
-    const newAnalyzingIds = new Set(analyzingIds);
 
-    for (const image of unanalyzed) {
-      newAnalyzingIds.add(image.id);
-      setAnalyzingIds(new Set(newAnalyzingIds));
-
+    // Helper function to analyze a single image
+    const analyzeSingleImage = async (image: ImageFile) => {
       try {
         // Perform local scan first if not already done
         let localAnalysis = image.localAnalysis;
@@ -367,7 +363,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                 : img
             )
           );
-          continue;
+          return;
         }
 
         // Use specialized analysis for collectibles
@@ -375,7 +371,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
           ? analyzeCollectibleWithGemini(image.file, collectibleType)
           : analyzeImageWithGemini(image.file));
 
-        let ebayData: any;
+        let ebayData: EbayPricingData | undefined;
         if (analysis.objects && analysis.objects.length > 0) {
           try {
             const searchQuery = analysis.objects.slice(0, 2).join(' ');
@@ -420,12 +416,14 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
               : img
           )
         );
-      } finally {
-        newAnalyzingIds.delete(image.id);
-        setAnalyzingIds(new Set(newAnalyzingIds));
       }
+    };
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+    // Process in chunks of 3 to avoid overwhelming the browser/API but faster than serial
+    const CHUNK_SIZE = 3;
+    for (let i = 0; i < unanalyzed.length; i += CHUNK_SIZE) {
+      const chunk = unanalyzed.slice(i, i + CHUNK_SIZE);
+      await Promise.all(chunk.map(img => analyzeSingleImage(img)));
     }
 
     setAnalyzing(false);
@@ -494,7 +492,7 @@ export default function BatchProcessor({ settings, onProcessingComplete }: Batch
                 </button>
                 <select
                   value={collectibleType}
-                  onChange={(e) => setCollectibleType(e.target.value as any)}
+                  onChange={(e) => setCollectibleType(e.target.value as 'stamp' | 'trading-card' | 'postcard' | 'war-letter' | 'other')}
                   className="px-3 py-3 bg-gray-100 rounded-lg border border-gray-300"
                 >
                   <option value="other">General Analysis</option>

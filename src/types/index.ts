@@ -109,7 +109,7 @@ export interface ProcessingResult {
   newFilename: string;
   analysis: GeminiAnalysis;
   operations: ProcessingOperation[];
-  metadata: Record<string, any>;
+  metadata: Record<string, string | number | undefined>;
   exportFormats: {
     json?: string;
     pdf?: string;

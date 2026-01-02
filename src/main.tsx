@@ -8,7 +8,7 @@ const savedTheme = themeManager.getSavedTheme() || 'auto';
 themeManager.applyTheme(savedTheme);
 
 if (savedTheme === 'auto') {
-  themeManager.listenToSystemThemeChanges((_theme) => {
+  themeManager.listenToSystemThemeChanges(() => {
     themeManager.applyTheme('auto');
   });
 }

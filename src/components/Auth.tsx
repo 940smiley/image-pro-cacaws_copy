@@ -23,8 +23,8 @@ export default function Auth() {
         if (error) throw error;
         alert('Check your email for the confirmation link!');
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }

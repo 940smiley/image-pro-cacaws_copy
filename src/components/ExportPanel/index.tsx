@@ -27,19 +27,21 @@ export default function ExportPanel({ results, images, onClose }: ExportPanelPro
       let blob: Blob | null = null;
 
       switch (selectedFormat) {
-        case 'json':
+        case 'json': {
           const jsonContent = exportToJson(results);
           blob = new Blob([jsonContent], { type: 'application/json' });
           break;
-        case 'csv':
+        }
+        case 'csv': {
           const csvContent = exportToCsv(results);
           blob = new Blob([csvContent], { type: 'text/csv' });
           break;
+        }
         case 'xlsx':
-          blob = await exportToXlsx(results, images);
+          blob = await exportToXlsx(results);
           break;
         case 'pdf':
-          blob = await exportToPdf(results, images);
+          blob = await exportToPdf(results);
           break;
         case 'all':
           blob = await exportAll(results, images);
@@ -86,8 +88,7 @@ export default function ExportPanel({ results, images, onClose }: ExportPanelPro
     setIsPostingToFacebook(true);
     try {
       // In a real implementation, we would get the access token from the user's settings
-      const accessToken = localStorage.getItem('facebookAccessToken') || '';
-      const posts = await createFacebookPostsFromResults(results, facebookPageId, accessToken);
+      const posts = await createFacebookPostsFromResults(results, facebookPageId);
       console.log('Created Facebook posts:', posts);
       alert(`Successfully created ${posts.length} Facebook posts!`);
     } catch (error) {
@@ -128,55 +129,50 @@ export default function ExportPanel({ results, images, onClose }: ExportPanelPro
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <button
                 onClick={() => setSelectedFormat('json')}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${
-                  selectedFormat === 'json'
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:bg-gray-50'
-                }`}
+                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${selectedFormat === 'json'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:bg-gray-50'
+                  }`}
               >
                 <FileJson className="w-8 h-8 text-blue-500 mb-1" />
                 <span className="text-sm">JSON</span>
               </button>
               <button
                 onClick={() => setSelectedFormat('csv')}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${
-                  selectedFormat === 'csv'
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:bg-gray-50'
-                }`}
+                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${selectedFormat === 'csv'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:bg-gray-50'
+                  }`}
               >
                 <FileText className="w-8 h-8 text-green-500 mb-1" />
                 <span className="text-sm">CSV</span>
               </button>
               <button
                 onClick={() => setSelectedFormat('xlsx')}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${
-                  selectedFormat === 'xlsx'
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:bg-gray-50'
-                }`}
+                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${selectedFormat === 'xlsx'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:bg-gray-50'
+                  }`}
               >
                 <FileSpreadsheet className="w-8 h-8 text-green-600 mb-1" />
                 <span className="text-sm">XLSX</span>
               </button>
               <button
                 onClick={() => setSelectedFormat('pdf')}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${
-                  selectedFormat === 'pdf'
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:bg-gray-50'
-                }`}
+                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${selectedFormat === 'pdf'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:bg-gray-50'
+                  }`}
               >
                 <FileText className="w-8 h-8 text-red-500 mb-1" />
                 <span className="text-sm">PDF</span>
               </button>
               <button
                 onClick={() => setSelectedFormat('all')}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${
-                  selectedFormat === 'all'
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:bg-gray-50'
-                }`}
+                className={`flex flex-col items-center justify-center p-3 rounded-lg border ${selectedFormat === 'all'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:bg-gray-50'
+                  }`}
               >
                 <Package className="w-8 h-8 text-purple-500 mb-1" />
                 <span className="text-sm">All</span>

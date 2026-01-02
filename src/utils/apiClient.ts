@@ -119,6 +119,7 @@ export const analyzeAndPrice = async (imageFile: File): Promise<{ analysis: Gemi
 
     return { analysis, pricing };
   } catch (error) {
+    console.error('Analysis and pricing failed:', error);
     throw error;
   }
 };

@@ -7,8 +7,10 @@ import { UserSettings } from '../types';
 interface SettingsProps {
   settings: UserSettings | null;
   onSettingsChange: (settings: UserSettings) => void;
-  onThemeChange: (theme: string) => void;
+  onThemeChange: (theme: Theme) => void;
 }
+
+import { Theme } from '../lib/themeManager';
 
 const defaultSettings: Omit<UserSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
   auto_enhance: true,
@@ -56,8 +58,8 @@ export default function Settings({ settings, onSettingsChange, onThemeChange }: 
         onSettingsChange(localSettings as UserSettings);
       }
 
-      themeManager.initializeTheme(localSettings.theme as any);
-      onThemeChange(localSettings.theme);
+      themeManager.initializeTheme(localSettings.theme as Theme);
+      onThemeChange(localSettings.theme as Theme);
 
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -175,11 +177,10 @@ export default function Settings({ settings, onSettingsChange, onThemeChange }: 
                     <button
                       key={theme}
                       onClick={() => setLocalSettings({ ...localSettings, theme })}
-                      className={`py-2 px-3 rounded-lg font-medium transition-colors ${
-                        localSettings.theme === theme
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
-                      }`}
+                      className={`py-2 px-3 rounded-lg font-medium transition-colors ${localSettings.theme === theme
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
+                        }`}
                     >
                       {theme.charAt(0).toUpperCase() + theme.slice(1)}
                     </button>

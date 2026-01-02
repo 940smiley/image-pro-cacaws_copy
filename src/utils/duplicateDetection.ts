@@ -16,10 +16,10 @@ import { ImageFile } from '../types';
 
 export function flagDuplicates(images: ImageFile[]): ImageFile[] {
   const seenHashes = new Map<string, string>(); // hash -> first_id
-  
+
   return images.map(img => {
     if (!img.hash) return img;
-    
+
     if (seenHashes.has(img.hash)) {
       return { ...img, isDuplicate: true };
     } else {

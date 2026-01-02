@@ -8,7 +8,7 @@ import EbayConfig from './components/EbayConfig';
 import PriceDashboard from './components/PriceDashboard';
 import Auth from './components/Auth';
 import { supabase } from './lib/supabase';
-import { themeManager } from './lib/themeManager';
+import { themeManager, Theme } from './lib/themeManager';
 import { UserSettings, ProcessingResult, ImageFile } from './types';
 import { TrendingUp } from 'lucide-react';
 
@@ -30,7 +30,7 @@ const defaultSettings: UserSettings = {
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('processor');
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [user, setUser] = useState<unknown>(null);
+  const [user, setUser] = useState<import('@supabase/supabase-js').User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [showAiProviderConfig, setShowAiProviderConfig] = useState(false);
@@ -60,8 +60,8 @@ function App() {
   const loadSettings = async (userId: string) => {
     try {
       setLoading(true);
-      const savedTheme = themeManager.getSavedTheme() || 'auto';
-      themeManager.applyTheme(savedTheme as any);
+      const savedTheme = (themeManager.getSavedTheme() || 'auto') as Theme;
+      themeManager.applyTheme(savedTheme);
 
       const { data } = await supabase
         .from('user_settings')
@@ -71,7 +71,7 @@ function App() {
 
       if (data) {
         setSettings(data);
-        themeManager.applyTheme(data.theme as any);
+        themeManager.applyTheme(data.theme as Theme);
       } else {
         const newSettings = {
           ...defaultSettings,
@@ -85,7 +85,7 @@ function App() {
 
         if (created) {
           setSettings(created);
-          themeManager.applyTheme(created.theme as any);
+          themeManager.applyTheme(created.theme as Theme);
         }
       }
     } catch (error) {
@@ -100,8 +100,8 @@ function App() {
     setUser(null);
   };
 
-  const handleThemeChange = (theme: string) => {
-    themeManager.initializeTheme(theme as any);
+  const handleThemeChange = (theme: Theme) => {
+    themeManager.initializeTheme(theme);
   };
 
   const tabs = [
@@ -166,7 +166,7 @@ function App() {
                   </p>
                 </div>
               )}
-              <span className="text-sm text-gray-500 hidden sm:block">{(user as any)?.email}</span>
+              <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
               <button
                 onClick={handleSignOut}
                 className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -298,7 +298,7 @@ function App() {
           <EbayConfig />
         )}
         {activeTab === 'settings' && (
-          <Settings settings={settings} onSettingsChange={setSettings} onThemeChange={handleThemeChange} />
+          <Settings settings={settings} onSettingsChange={setSettings} onThemeChange={(t) => handleThemeChange(t as Theme)} />
         )}
         {activeTab === 'about' && (
           <div className="max-w-3xl mx-auto p-6">

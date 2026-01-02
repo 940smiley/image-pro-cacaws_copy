@@ -51,7 +51,7 @@ export default function EbayConfig() {
             authToken: parsedConfig.authToken || '',
             environment: parsedConfig.environment || 'production',
           });
-        } catch (e) {
+        } catch {
           // Fallback if it's not JSON
           setConfig(prev => ({ ...prev, authToken: data.api_key_encrypted }));
         }
@@ -133,9 +133,8 @@ export default function EbayConfig() {
 
         <div className="p-8">
           {status && (
-            <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-              status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
-            }`}>
+            <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
               {status.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
               <p>{status.message}</p>
             </div>

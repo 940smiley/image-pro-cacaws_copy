@@ -32,12 +32,11 @@ interface FacebookPage {
  */
 export const createFacebookPost = async (
   pageId: string,
-  postData: FacebookPostRequest,
-  _accessToken: string
+  postData: FacebookPostRequest
 ): Promise<FacebookPostResponse> => {
   // In a real implementation, we would use the Facebook Graph API to create a post
   // For this implementation, we'll simulate the API call
-  
+
   // Construct the request body for Facebook's Graph API
   const requestBody = {
     message: postData.message,
@@ -47,10 +46,10 @@ export const createFacebookPost = async (
     description: postData.description,
     privacy: postData.privacy
   };
-  
+
   // Simulate API call - in a real implementation, we would make the actual API call
   console.log('Creating Facebook post with data:', requestBody);
-  
+
   // Return a mock response
   return {
     id: `post_${Math.random().toString(36).substr(2, 9)}`,
@@ -68,11 +67,10 @@ export const createFacebookPost = async (
  */
 export const createFacebookPostsFromResults = async (
   results: ProcessingResult[],
-  pageId: string,
-  accessToken: string
+  pageId: string
 ): Promise<FacebookPostResponse[]> => {
   const responses: FacebookPostResponse[] = [];
-  
+
   for (const result of results) {
     // Create post data from the processing result
     const postData: FacebookPostRequest = {
@@ -82,15 +80,15 @@ export const createFacebookPostsFromResults = async (
       description: result.analysis.description,
       privacy: { value: 'EVERYONE' }
     };
-    
+
     try {
-      const response = await createFacebookPost(pageId, postData, accessToken);
+      const response = await createFacebookPost(pageId, postData);
       responses.push(response);
     } catch (error) {
       console.error(`Failed to create Facebook post for ${result.newFilename}:`, error);
     }
   }
-  
+
   return responses;
 };
 
@@ -102,10 +100,10 @@ export const createFacebookPostsFromResults = async (
 export const getFacebookPages = async (accessToken: string): Promise<FacebookPage[]> => {
   // In a real implementation, we would call the Facebook Graph API to get pages
   // For this implementation, we'll return mock data
-  
+
   // Simulate API call
   console.log('Fetching Facebook pages with token:', accessToken);
-  
+
   // Return mock pages
   return [
     {
@@ -135,15 +133,15 @@ export const uploadImageToFacebook = async (
 ): Promise<string> => {
   // In a real implementation, we would upload the image to Facebook
   // For this implementation, we'll simulate the upload
-  
+
   // Create form data for the image upload
   const formData = new FormData();
   formData.append('source', imageBlob, 'image.jpg');
   formData.append('access_token', accessToken);
-  
+
   // Simulate API call
   console.log('Uploading image to Facebook page:', pageId);
-  
+
   // Return a mock image ID
   return `image_${Math.random().toString(36).substr(2, 9)}`;
 };
