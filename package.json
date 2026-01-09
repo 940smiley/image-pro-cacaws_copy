@@ -25,10 +25,10 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.90.0",
+    "@supabase/supabase-js": "^2.90.1",
     "clsx": "^2.1.1",
     "exiftool-vendored": "^34.3.0",
-    "framer-motion": "^12.24.10",
+    "framer-motion": "^12.24.12",
     "jszip": "^3.10.1",
     "lucide-react": "^0.562.0",
     "pdf-lib": "^1.17.1",
