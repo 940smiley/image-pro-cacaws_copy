@@ -27,7 +27,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.93.2",
     "clsx": "^2.1.1",
-    "exiftool-vendored": "^35.4.0",
+    "exiftool-vendored": "^35.5.0",
     "framer-motion": "^12.29.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.563.0",
@@ -42,7 +42,7 @@
     "@eslint/js": "^9.9.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@tauri-apps/cli": "^2.9.6",
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
