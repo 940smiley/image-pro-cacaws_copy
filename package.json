@@ -25,7 +25,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.93.2",
+    "@supabase/supabase-js": "^2.93.3",
     "clsx": "^2.1.1",
     "exiftool-vendored": "^35.5.0",
     "framer-motion": "^12.29.2",
@@ -47,7 +47,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.18",
-    "electron": "^40.0.0",
+    "electron": "^40.1.0",
     "electron-builder": "^26.6.0",
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^7.0.1",
