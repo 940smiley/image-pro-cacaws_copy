@@ -25,12 +25,12 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.99.3",
+    "@supabase/supabase-js": "^2.100.0",
     "clsx": "^2.1.1",
     "exiftool-vendored": "^35.15.1",
     "framer-motion": "^12.38.0",
     "jszip": "^3.10.1",
-    "lucide-react": "^0.577.0",
+    "lucide-react": "^1.0.1",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -55,9 +55,9 @@
     "globals": "^17.4.0",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5.5.3",
-    "typescript-eslint": "^8.57.1",
-    "vite": "^8.0.1"
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.57.2",
+    "vite": "^8.0.2"
   },
   "build": {
     "appId": "com.940smiley.imagepro",
