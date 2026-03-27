@@ -25,7 +25,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.100.0",
+    "@supabase/supabase-js": "^2.100.1",
     "clsx": "^2.1.1",
     "exiftool-vendored": "^35.15.1",
     "framer-motion": "^12.38.0",
@@ -57,7 +57,7 @@
     "tailwindcss": "^4.1.18",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.57.2",
-    "vite": "^8.0.2"
+    "vite": "^8.0.3"
   },
   "build": {
     "appId": "com.940smiley.imagepro",
