@@ -12,3 +12,4 @@ export const supabase = createClient(
   supabaseUrl || 'https://placeholder-url.supabase.co',
   supabaseAnonKey || 'placeholder-key'
 );
+

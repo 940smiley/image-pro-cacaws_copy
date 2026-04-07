@@ -34,7 +34,7 @@ jobs:
           if [ $? -ne 0 ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
-          
+
       - name: Commit and push changes
         if: steps.changes.outputs.has_changes == 'true'
         run: |

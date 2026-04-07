@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    
+
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
       return new Response(
@@ -87,11 +87,11 @@ Deno.serve(async (req) => {
     }
 
     const geminiData = await geminiResponse.json();
-    
+
     if (geminiData.candidates && geminiData.candidates[0]?.content?.parts?.[0]?.text) {
       const responseText = geminiData.candidates[0].content.parts[0].text;
       const orientationData = JSON.parse(responseText);
-      
+
       return new Response(JSON.stringify(orientationData), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -107,3 +107,4 @@ Deno.serve(async (req) => {
     });
   }
 });
+

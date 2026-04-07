@@ -35,9 +35,9 @@ jobs:
             });
 
             const failedJob = jobs.data.jobs.find(job => job.conclusion === 'failure');
-            
+
             let logSnippet = "Could not retrieve logs.";
-            
+
             if (failedJob) {
               try {
                 // 2. Retrieve logs for the failed job
@@ -67,3 +67,4 @@ jobs:
               body: `The build failed in the **${failedJob ? failedJob.name : 'unknown'}** job.\n\n[View Run](${runUrl})\n\n### Error Log Snippet\n${logSnippet}\n\n@${context.payload.workflow_run.actor.login} please investigate.`,
               labels: ['needs-ai', 'build-failure']
             });
+

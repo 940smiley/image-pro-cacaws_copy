@@ -68,3 +68,4 @@ export const extractMetadata = async (): Promise<Record<string, string | number>
   // For this implementation, we'll return null as it's a complex client-side operation
   return null;
 };
+

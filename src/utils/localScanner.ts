@@ -6,7 +6,7 @@ export interface LocalAnalysis {
 }
 
 /**
- * Performs a simple local scan of an image to determine if it contains 
+ * Performs a simple local scan of an image to determine if it contains
  * an object worth sending to the server for detailed AI analysis.
  */
 export const scanImageLocally = async (file: File): Promise<LocalAnalysis> => {
@@ -79,3 +79,4 @@ export const scanImageLocally = async (file: File): Promise<LocalAnalysis> => {
     img.src = url;
   });
 };
+

@@ -114,7 +114,7 @@ Deno.serve(async (req: Request) => {
     // Parse the stored config (might be JSON or plain string)
     let ebayAuthToken = aiConfig.api_key_encrypted;
     let ebayAppId = '';
-    
+
     try {
       const parsedConfig = JSON.parse(aiConfig.api_key_encrypted);
       ebayAuthToken = parsedConfig.authToken;
@@ -326,7 +326,7 @@ const getEbayConditionId = (condition: string): number => {
     'Used': 3000, // Default to Very Good for Used
     'For parts or not working': 7000
   };
-  
+
   return conditionMap[condition] || 3000; // Default to Very Good
 };
 

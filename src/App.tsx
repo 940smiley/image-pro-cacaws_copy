@@ -214,7 +214,7 @@ function App() {
 
         await supabase.from('collection_images').delete().match({ user_id: user.id, image_id: id });
 
-        
+
 
         setCollectionImages(prev => prev.filter(img => img.id !== id));
 
@@ -884,4 +884,5 @@ function App() {
 
 
   export default App;
+
 

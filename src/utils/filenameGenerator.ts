@@ -80,3 +80,4 @@ export const generateOrganizedFilename = (analysis: GeminiAnalysis, originalName
 
   return `${baseName}_${Date.now()}.${extension}`;
 };
+

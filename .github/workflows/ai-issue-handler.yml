@@ -8,7 +8,7 @@ jobs:
   analyze_issue:
     runs-on: ubuntu-latest
     if: |
-      (github.event.issue.user.login == 'dependabot[bot]') || 
+      (github.event.issue.user.login == 'dependabot[bot]') ||
       contains(github.event.issue.labels.*.name, 'needs-ai') ||
       contains(github.event.issue.labels.*.name, 'security')
     steps:
@@ -34,7 +34,7 @@ jobs:
         run: |
           # Run the script and capture output to a temporary file
           node scripts/ai_issue_handler.cjs > ai_response.md
-          
+
           # Read file content into a variable (handling multiline)
           echo "RESPONSE<<EOF" >> $GITHUB_ENV
           cat ai_response.md >> $GITHUB_ENV
@@ -54,3 +54,4 @@ jobs:
                 body: "## 🤖 Gemini AI Analysis\n\n" + response
               });
             }
+

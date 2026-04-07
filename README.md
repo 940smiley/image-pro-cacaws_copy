@@ -1,6 +1,7 @@
 # Image Pro - Professional Batch Image Processing
 
 ## About
+
 Image Pro is a powerful batch image processing platform that allows you to process up to 100 images simultaneously with advanced features including AI-powered analysis, smart renaming, metadata embedding, and direct listing capabilities.
 
 **Live Demo:** [https://940smiley.github.io/image-pro-cacaws_copy/](https://940smiley.github.io/image-pro-cacaws_copy/)
@@ -32,17 +33,20 @@ Image Pro is a powerful batch image processing platform that allows you to proce
 
 ### Setup Development Environment
 
-#### On Windows:
+#### On Windows
+
 ```bash
 npm run setup:win
 ```
 
-#### On macOS/Linux:
+#### On macOS/Linux
+
 ```bash
 npm run setup
 ```
 
 This will:
+
 - Verify Node.js and npm installation
 - Install project dependencies
 - Create a `.env` file with environment variable placeholders
@@ -56,12 +60,14 @@ npm run dev
 
 ### Building the Application
 
-#### Web Application:
+#### Web Application
+
 ```bash
 npm run build
 ```
 
-#### Complete Build (Web, Desktop):
+#### Complete Build (Web, Desktop)
+
 ```bash
 # On Windows:
 npm run build:all:win

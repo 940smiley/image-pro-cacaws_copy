@@ -40,3 +40,4 @@ jobs:
           supabase functions deploy generate-pdf-report --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy generate-pdf-report"
           supabase functions deploy multi-provider-ai --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy multi-provider-ai"
           supabase functions deploy rename-images --no-verify-jwt --import-map supabase/import_map.json || echo "Failed to deploy rename-images"
+

@@ -107,22 +107,22 @@ Deno.serve(async (req: Request) => {
 const generateSmartFilename = (originalFilename: string, analysis: any): string => {
   // Extract the file extension
   const fileExtension = originalFilename.split('.').pop() || 'jpg';
-  
+
   // Create a base name based on the analysis
   let baseName = '';
-  
+
   if (analysis.collectibleDetails) {
     // For collectibles, create a descriptive name
     const { type, year, country, denomination, condition } = analysis.collectibleDetails;
-    
+
     // Build the name based on available details
     const parts = [];
-    
+
     if (year) parts.push(year);
     if (country) parts.push(country);
     if (type) parts.push(type);
     if (denomination) parts.push(denomination);
-    
+
     // Add description if available
     if (analysis.description) {
       // Clean the description to remove special characters
@@ -131,10 +131,10 @@ const generateSmartFilename = (originalFilename: string, analysis: any): string 
         .replace(/\s+/g, ' ')
         .trim()
         .substring(0, 50); // Limit length
-      
+
       parts.push(cleanDescription);
     }
-    
+
     baseName = parts.join(' ').replace(/\s+/g, ' ').trim();
   } else if (analysis.objects && analysis.objects.length > 0) {
     // For non-collectibles, use the main objects identified
@@ -143,18 +143,18 @@ const generateSmartFilename = (originalFilename: string, analysis: any): string 
     // Fallback to the original name with a prefix
     baseName = `analyzed-${originalFilename.replace(/\.[^/.]+$/, '')}`;
   }
-  
+
   // Clean the base name to ensure it's a valid filename
   baseName = baseName
     .replace(/[<>:"/\\|?*]/g, ' ') // Replace invalid characters
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
-  
+
   // Limit the total length to avoid filesystem issues
   if (baseName.length > 100) {
     baseName = baseName.substring(0, 100).trim();
   }
-  
+
   // Return the new filename with the original extension
   return `${baseName}.${fileExtension}`;
 };

@@ -60,17 +60,17 @@ export const rotateImage = (
   // Calculate new canvas dimensions to fit rotated image
   const width = sourceCanvas.width;
   const height = sourceCanvas.height;
-  
+
   const cos = Math.abs(Math.cos(radians));
   const sin = Math.abs(Math.sin(radians));
-  
+
   rotatedCanvas.width = width * cos + height * sin;
   rotatedCanvas.height = width * sin + height * cos;
 
   // Center and rotate
   ctx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
   ctx.rotate(radians);
-  
+
   // Draw the image
   ctx.drawImage(sourceCanvas, -width / 2, -height / 2);
 
@@ -117,7 +117,7 @@ export const enhanceImage = (sourceCanvas: HTMLCanvasElement): HTMLCanvasElement
     const newB = bcLUT[b];
 
     const gray = rW * newR + gW * newG + bW * newB;
-    
+
     data[i] = Math.max(0, Math.min(255, gray * satConst + newR * saturation));
     data[i + 1] = Math.max(0, Math.min(255, gray * satConst + newG * saturation));
     data[i + 2] = Math.max(0, Math.min(255, gray * satConst + newB * saturation));
@@ -211,7 +211,7 @@ export const autoDetectObjects = (canvas: HTMLCanvasElement): CropArea[] => {
   const { width, height } = canvas;
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
-  
+
   // 1. Simple grayscale and threshold
   const binary = new Uint8Array(width * height);
   for (let i = 0; i < data.length; i += 4) {
@@ -257,11 +257,11 @@ export const autoDetectObjects = (canvas: HTMLCanvasElement): CropArea[] => {
         const w = maxX - minX;
         const h = maxY - minY;
         if (w > 50 && h > 50) { // Filter out small noise
-          areas.push({ 
-            x: Math.max(0, minX - 10), 
-            y: Math.max(0, minY - 10), 
-            width: Math.min(width - minX, w + 20), 
-            height: Math.min(height - minY, h + 20) 
+          areas.push({
+            x: Math.max(0, minX - 10),
+            y: Math.max(0, minY - 10),
+            width: Math.min(width - minX, w + 20),
+            height: Math.min(height - minY, h + 20)
           });
         }
       }
@@ -279,3 +279,4 @@ export const magicCrop = (_canvas: HTMLCanvasElement, currentArea: CropArea): Cr
   // This is a simplified version of an edge-snapping algorithm
   return currentArea; // Placeholder: in a real CV app, we'd use Canny edge detection here
 };
+

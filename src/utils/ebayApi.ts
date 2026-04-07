@@ -56,7 +56,7 @@ export const createEbayListing = async (listingData: EbayListingRequest): Promis
  */
 export const createEbayListingsFromResults = async (results: ProcessingResult[]): Promise<EbayListingResponse[]> => {
   const responses: EbayListingResponse[] = [];
-  
+
   for (const result of results) {
     // Create listing data from the processing result
     const listingData: EbayListingRequest = {
@@ -74,7 +74,7 @@ export const createEbayListingsFromResults = async (results: ProcessingResult[])
       returnPolicy: 'Item must be returned in same condition as sent',
       bestOfferEnabled: true
     };
-    
+
     try {
       const response = await createEbayListing(listingData);
       responses.push(response);
@@ -82,6 +82,6 @@ export const createEbayListingsFromResults = async (results: ProcessingResult[])
       console.error(`Failed to create listing for ${result.newFilename}:`, error);
     }
   }
-  
+
   return responses;
 };

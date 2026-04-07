@@ -123,3 +123,4 @@ export interface ProcessingResult {
 export interface CollectionImage {
   image_file: ImageFile;
 }
+

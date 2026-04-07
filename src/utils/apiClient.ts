@@ -123,3 +123,4 @@ export const analyzeAndPrice = async (imageFile: File): Promise<{ analysis: Gemi
     throw error;
   }
 };
+

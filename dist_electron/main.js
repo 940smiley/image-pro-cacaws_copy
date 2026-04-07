@@ -139,3 +139,4 @@ electron_1.app.on('window-all-closed', () => {
         electron_1.app.quit();
     }
 });
+

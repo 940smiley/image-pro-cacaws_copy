@@ -53,7 +53,8 @@ if (files.length < 2) {
 } else {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const output = path.join(targetDir, `merged-export-${timestamp}.${command}`);
-  
+
   if (command === 'pdf') mergePdfs(files, output);
   else if (command === 'csv') mergeCsvs(files, output);
 }
+

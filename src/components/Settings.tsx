@@ -231,3 +231,4 @@ export default function Settings({ settings, onSettingsChange, onThemeChange }: 
     </div>
   );
 }
+

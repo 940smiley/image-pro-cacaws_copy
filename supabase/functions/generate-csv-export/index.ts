@@ -278,8 +278,8 @@ Deno.serve(async (req: Request) => {
 
     // Return the CSV as a response
     return new Response(csvContent, {
-      headers: { 
-        ...corsHeaders, 
+      headers: {
+        ...corsHeaders,
         "Content-Type": "text/csv",
         "Content-Disposition": "attachment; filename=results.csv"
       },

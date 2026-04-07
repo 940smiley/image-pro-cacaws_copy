@@ -30,10 +30,10 @@ jobs:
         run: |
           git fetch origin ${{ github.base_ref }}
           DIFF=$(git diff origin/${{ github.base_ref }}...HEAD)
-          
+
           # Store diff in a file to handle size/special characters safely
           echo "$DIFF" > pr_diff.txt
-          
+
           # Also set as env var for the next step, but limited size
           echo "PR_DIFF<<EOF" >> $GITHUB_ENV
           head -c 20000 pr_diff.txt >> $GITHUB_ENV
@@ -47,7 +47,7 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
         run: |
           node scripts/ai_pr_reviewer.cjs > review_response.md
-          
+
           echo "REVIEW_RESULT<<EOF" >> $GITHUB_ENV
           cat review_response.md >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -66,3 +66,4 @@ jobs:
                 body: "## 🔍 AI Code Review\n\n" + review
               });
             }
+

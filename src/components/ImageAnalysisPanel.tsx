@@ -219,3 +219,4 @@ export default function ImageAnalysisPanel({ image, onClose }: ImageAnalysisPane
     </div>
   );
 }
+

@@ -347,7 +347,7 @@ export default function ImageEditor({ image, onApply, onClose, onDownload, showG
                 </div>
               </div>
             )}
-            
+
             {magicCropError && (
               <div className="absolute -bottom-12 left-0 right-0 flex justify-center">
                 <div className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">

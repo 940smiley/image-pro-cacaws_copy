@@ -65,3 +65,4 @@ export const themeManager = {
     return () => mediaQuery.removeEventListener('change', handler);
   },
 };
+

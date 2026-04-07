@@ -94,7 +94,7 @@ export default function SourceRepoManager() {
             </div>
           )}
         </div>
-        
+
         <div className="mt-8 text-center">
             <h3 className="text-lg font-semibold text-gray-700">Next Steps</h3>
             <ol className="text-sm text-gray-600 list-decimal list-inside mt-2 inline-block text-left">

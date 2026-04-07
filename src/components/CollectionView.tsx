@@ -146,3 +146,4 @@ export default function CollectionView({ images, onRemove, onReprocess, onReproc
         </div>
     );
 }
+

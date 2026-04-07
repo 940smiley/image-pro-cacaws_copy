@@ -9,7 +9,7 @@ import path from 'path';
 
 const setupSourceRepo = (repoPath, supabaseUrl, supabaseKey) => {
   const absolutePath = path.resolve(repoPath);
-  
+
   if (!fs.existsSync(absolutePath)) {
     fs.mkdirSync(absolutePath, { recursive: true });
   }
@@ -61,15 +61,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/node-js@v4
         with:
           node-version: '20'
-          
+
       - name: Install dependencies
         run: npm install
-        
+
       - name: Process Images
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -122,3 +122,4 @@ if (args.length < 1) {
 } else {
   setupSourceRepo(args[0]);
 }
+

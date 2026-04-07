@@ -112,7 +112,7 @@ export default function AiProviderConfig({ onClose }: AiProviderConfigProps) {
 
       if (error) throw error;
 
-      setProviders(providers.map(p => 
+      setProviders(providers.map(p =>
         p.id === editingProvider.id ? editingProvider : p
       ));
       setEditingProvider(null);

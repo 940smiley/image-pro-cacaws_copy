@@ -18,3 +18,4 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
         electron_1.ipcRenderer.off(channel, listener);
     }
 });
+

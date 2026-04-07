@@ -54,6 +54,7 @@ The application must implement specialized analysis for various collectible cate
 ### Value Estimation Accuracy
 
 For accurate value estimation, the AI analysis must consider:
+
 - Condition/rarity grading standards (e.g., Mint, Near Mint, Very Fine, Fine)
 - Historical significance and provenance
 - Market trends and recent sales data
@@ -175,6 +176,7 @@ npm run preview
 ### Image Processing Pipeline
 
 The application processes images through the following pipeline:
+
 1. **Expansion** (optional) - Expands image canvas by specified percentage
 2. **Cropping** (manual) - Interactive cropping with visual editor
 3. **Enhancement** (automatic) - Adjusts brightness, contrast, and saturation
@@ -183,6 +185,7 @@ The application processes images through the following pipeline:
 ### Theming System
 
 The application implements a flexible theming system with three modes:
+
 - Light theme
 - Dark theme
 - Auto theme (follows system preference)
@@ -192,6 +195,7 @@ Themes are persisted in localStorage and applied via CSS custom properties.
 ### API Integration
 
 The application integrates with external services through Supabase edge functions:
+
 - **Gemini Analysis**: Analyzes images and identifies objects, categories, and colors
 - **eBay Pricing**: Retrieves pricing data for identified objects
 
@@ -200,6 +204,7 @@ The application integrates with external services through Supabase edge function
 ### Frontend Architecture
 
 The application follows a component-based architecture with the main App component managing state for:
+
 - Active tab navigation (Processor, Settings, About)
 - User settings with persistence via Supabase
 - Theme management
@@ -208,6 +213,7 @@ The application follows a component-based architecture with the main App compone
 ### Backend Architecture
 
 Supabase provides the backend infrastructure:
+
 - Authentication for user accounts
 - Database storage for user settings
 - Edge functions for external API integrations
@@ -225,20 +231,25 @@ Supabase provides the backend infrastructure:
 ## Key Components
 
 ### BatchProcessor
+
 Main component for handling image uploads, processing, and display of results.
 
 ### ImageEditor
+
 Interactive cropping tool with grid overlay and visual feedback.
 
 ### Settings
+
 User preferences panel for configuring processing options and application settings.
 
 ### ImageAnalysisPanel
+
 Display panel for AI-generated image analysis and eBay pricing data.
 
 ## API Endpoints
 
 The application uses Supabase edge functions:
+
 - `/analyze-image-gemini` - Processes image with Google Gemini API (enhanced for collectibles)
 - `/ebay-search-pricing` - Retrieves pricing data from eBay API
 - `/ebay-create-listing` - Creates eBay listings using eBay API
@@ -290,18 +301,22 @@ npm run test
 The application supports multiple deployment options:
 
 ### Web Deployment
+
 - Deploy the static build to GitHub Pages using GitHub Actions
 - Host on any static hosting service (Vercel, Netlify, etc.)
 
 ### Desktop Applications
+
 - Build cross-platform desktop apps using Tauri/Rust or Electron
 - Automated GitHub Actions for building Windows, Linux, and macOS binaries
 
 ### Mobile Applications
+
 - Build iOS app using React Native
 - Automated build pipeline for app store deployment
 
 ### CI/CD Pipeline
+
 - GitHub Actions for automated testing, building, and deployment
 - Automated release generation with cross-platform binaries
 - Version management and changelog generation

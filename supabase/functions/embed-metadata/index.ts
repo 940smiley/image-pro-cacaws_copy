@@ -72,20 +72,20 @@ Deno.serve(async (req: Request) => {
     // In a real implementation, we would use a library like exiftool to embed metadata
     // For this implementation, we'll simulate the process by creating a response
     // that includes the original image with metadata as a JSON object
-    
+
     // Create metadata object from analysis and operations
     const metadata = {
       // Standard metadata
       'Image Filename': body.filename,
       'Processing Date': new Date().toISOString(),
       'Analysis Confidence': body.analysis.confidence,
-      
+
       // Analysis results
       'Description': body.analysis.description,
       'Objects Identified': body.analysis.objects?.join(', ') || '',
       'Categories': body.analysis.categories?.join(', ') || '',
       'Colors': body.analysis.colors?.join(', ') || '',
-      
+
       // Collectible details if available
       ...(body.analysis.collectibleDetails && {
         'Collectible Type': body.analysis.collectibleDetails.type,
@@ -101,20 +101,20 @@ Deno.serve(async (req: Request) => {
         'Historical Significance': body.analysis.collectibleDetails.historicalSignificance,
         'Special Features': body.analysis.collectibleDetails.specialFeatures?.join(', '),
       }),
-      
+
       // Condition and authenticity
       ...(body.analysis.conditionAssessment && { 'Condition Assessment': body.analysis.conditionAssessment }),
       ...(body.analysis.authenticityMarkers && { 'Authenticity Markers': body.analysis.authenticityMarkers.join(', ') }),
-      
+
       // Value estimation
       ...(body.analysis.estimatedValueRange && {
         'Estimated Value Min': body.analysis.estimatedValueRange.min,
         'Estimated Value Max': body.analysis.estimatedValueRange.max,
       }),
-      
+
       // Processing operations
       'Processing Operations': body.operations.map(op => `${op.type}: ${JSON.stringify(op.params)}`).join('; '),
-      
+
       // Application-specific metadata
       'Application': 'Image Pro',
       'Version': '1.0.0',
