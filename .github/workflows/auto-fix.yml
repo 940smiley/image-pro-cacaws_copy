@@ -5,6 +5,9 @@ on:
   push:
     branches: [ main, master, develop ]
 
+permissions:
+  contents: write
+
 jobs:
   format:
     runs-on: ubuntu-latest
@@ -30,16 +33,17 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          git diff --exit-code
-          if [ $? -ne 0 ]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
+          if git diff --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
-          
+
       - name: Commit and push changes
         if: steps.changes.outputs.has_changes == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
-          git commit -m "Auto-fix: Format code [skip ci]" -m "Auto-generated commit by GitHub Actions" || echo "No changes to commit"
+          git commit -m "Auto-fix: Format code [skip ci]" -m "Auto-generated commit by GitHub Actions"
           git push
