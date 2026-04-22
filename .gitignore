@@ -21,6 +21,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+repo-secrets.env
 qwen-lost-changes.txt
 /Stamp_resource_files
 google-ai-gemini-api-key.txt
