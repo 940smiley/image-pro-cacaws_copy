@@ -72,7 +72,13 @@ npm run build:all
 
 ## Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+Create a local `.env` file by copying `.env.example` and filling in your own values:
+
+```bash
+cp .env.example .env
+```
+
+Then update it with the following variables:
 
 ```env
 # Supabase Configuration
