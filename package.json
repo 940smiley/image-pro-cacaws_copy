@@ -25,9 +25,9 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.110.2",
+    "@supabase/supabase-js": "^2.110.3",
     "clsx": "^2.1.1",
-    "exiftool-vendored": "^36.0.0",
+    "exiftool-vendored": "^36.1.0",
     "framer-motion": "^12.42.2",
     "jszip": "^3.10.1",
     "lucide-react": "^1.24.0",
@@ -53,10 +53,10 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
-    "postcss": "^8.5.18",
+    "postcss": "^8.5.19",
     "tailwindcss": "^4.1.18",
     "typescript": "^7.0.2",
-    "typescript-eslint": "^8.63.0",
+    "typescript-eslint": "^8.64.0",
     "vite": "^8.1.4"
   },
   "build": {
