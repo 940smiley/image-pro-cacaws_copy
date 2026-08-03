@@ -30,7 +30,7 @@
     "exiftool-vendored": "^37.0.0",
     "framer-motion": "^12.43.0",
     "jszip": "^3.10.1",
-    "lucide-react": "^1.27.0",
+    "lucide-react": "^1.28.0",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -43,9 +43,9 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^26.1.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.4",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "autoprefixer": "^10.5.4",
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
@@ -57,7 +57,7 @@
     "tailwindcss": "^4.1.18",
     "typescript": "^7.0.2",
     "typescript-eslint": "^8.65.0",
-    "vite": "^8.1.5"
+    "vite": "^8.2.0"
   },
   "build": {
     "appId": "com.940smiley.imagepro",
