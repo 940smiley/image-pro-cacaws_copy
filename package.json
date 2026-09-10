@@ -27,7 +27,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
     "clsx": "^2.1.1",
-    "exiftool-vendored": "^37.2.0",
+    "exiftool-vendored": "^38.0.0",
     "framer-motion": "^13.2.0",
     "jszip": "^3.10.1",
     "lucide-react": "^1.41.0",
