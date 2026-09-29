@@ -25,10 +25,10 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.1",
+    "@supabase/supabase-js": "^2.117.2",
     "clsx": "^2.1.1",
     "exiftool-vendored": "^38.2.0",
-    "framer-motion": "^13.4.3",
+    "framer-motion": "^13.4.4",
     "jszip": "^3.10.2",
     "lucide-react": "^1.48.0",
     "pdf-lib": "^1.17.1",
@@ -42,7 +42,7 @@
     "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@tauri-apps/cli": "^2.11.5",
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
