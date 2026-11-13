@@ -28,7 +28,7 @@
     "@supabase/supabase-js": "^2.119.0",
     "clsx": "^2.1.1",
     "exiftool-vendored": "^39.2.0",
-    "framer-motion": "^14.10.1",
+    "framer-motion": "^14.11.1",
     "jszip": "^3.10.2",
     "lucide-react": "^1.70.0",
     "pdf-lib": "^1.17.1",
@@ -45,7 +45,7 @@
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.2.1",
+    "@vitejs/plugin-react": "^6.3.0",
     "autoprefixer": "^10.6.2",
     "electron": "^45.2.3",
     "electron-builder": "^26.18.0",
@@ -56,8 +56,8 @@
     "postcss": "^8.5.32",
     "tailwindcss": "^4.1.18",
     "typescript": "~7.0.2",
-    "typescript-eslint": "^8.72.1",
-    "vite": "^8.3.6"
+    "typescript-eslint": "^8.72.2",
+    "vite": "^8.3.7"
   },
   "build": {
     "appId": "com.940smiley.imagepro",
